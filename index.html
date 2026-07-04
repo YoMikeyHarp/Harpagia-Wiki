@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harpagia Wiki</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0d0e1a;--surface:#13152a;--surface2:#1a1d35;--border:#2d3060;--text:#c8cce8;--text-dim:#7880b0;--link:#818cf8;--link-hover:#a5b4fc;--gold:#f59e0b;--green:#22c55e;--red:#ef4444;--header-h:56px;--sidebar-w:220px}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;font-size:14px;line-height:1.5}
+a{color:var(--link);text-decoration:none}
+a:hover{color:var(--link-hover);text-decoration:underline}
+img{image-rendering:pixelated;image-rendering:crisp-edges}
+#header{position:fixed;top:0;left:0;right:0;height:var(--header-h);background:#0a0b18;border-bottom:2px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 16px;z-index:100}
+#logo{font-size:20px;font-weight:700;color:var(--gold);letter-spacing:1px;white-space:nowrap;cursor:pointer}
+#logo span{color:var(--link)}
+#back-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);padding:6px 12px;border-radius:4px;cursor:pointer;font-size:13px}
+#back-btn:hover{color:var(--text);border-color:var(--link)}
+#search-wrap{position:relative;flex:1;max-width:400px}
+#search{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:4px;font-size:14px;outline:none}
+#search:focus{border-color:var(--link)}
+#search-results{position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-top:none;max-height:300px;overflow-y:auto;z-index:200;display:none}
+#search-results .sr{padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+#search-results .sr:hover{background:var(--surface2)}
+#search-results .sr img{width:24px;height:24px;object-fit:contain}
+#search-results .sr-cat{font-size:11px;color:var(--text-dim);margin-left:auto}
+#nav-links{display:flex;gap:4px;margin-left:auto}
+#nav-links a{padding:6px 10px;border-radius:4px;font-size:13px;color:var(--text-dim)}
+#nav-links a:hover{background:var(--surface2);color:var(--link);text-decoration:none}
+#layout{display:flex;margin-top:var(--header-h)}
+#sidebar{width:var(--sidebar-w);min-height:calc(100vh - var(--header-h));background:var(--surface);border-right:1px solid var(--border);padding:12px 0;position:fixed;top:var(--header-h);overflow-y:auto}
+#sidebar .cat-header{padding:8px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+#sidebar .cat-header:hover{color:var(--text)}
+#sidebar .cat-links a{display:block;padding:5px 24px;color:var(--text-dim);font-size:13px}
+#sidebar .cat-links a:hover{color:var(--link);text-decoration:none;background:var(--surface2)}
+#main{margin-left:var(--sidebar-w);padding:24px;min-height:calc(100vh - var(--header-h));max-width:1100px}
+.breadcrumb{font-size:12px;color:var(--text-dim);margin-bottom:16px}
+.breadcrumb a{color:var(--text-dim)}
+.breadcrumb a:hover{color:var(--link)}
+.breadcrumb span{margin:0 6px}
+.page-title{font-size:26px;font-weight:700;color:#fff;border-bottom:2px solid var(--border);padding-bottom:12px;margin-bottom:16px}
+.page-subtitle{color:var(--text-dim);margin-bottom:20px;font-size:14px}
+.infobox{float:right;clear:right;background:var(--surface);border:1px solid var(--border);margin:0 0 20px 24px;min-width:200px;max-width:260px}
+.infobox-title{padding:8px 12px;font-weight:700;font-size:14px;text-align:center;color:#fff}
+.infobox-img{text-align:center;padding:16px;background:var(--surface2)}
+.infobox-img img{max-width:120px;max-height:120px}
+.infobox table{width:100%;border-collapse:collapse}
+.infobox td{padding:5px 10px;border-top:1px solid var(--border);font-size:13px}
+.infobox td:first-child{color:var(--text-dim);font-weight:600;width:50%}
+.infobox td:last-child{text-align:right;font-weight:600;color:#fff}
+.wiki-table{width:100%;border-collapse:collapse;margin-bottom:20px}
+.wiki-table th{background:var(--surface2);padding:8px 12px;text-align:left;border:1px solid var(--border);color:var(--gold);font-size:13px;cursor:pointer;white-space:nowrap;user-select:none}
+.wiki-table th:hover{background:#22254a}
+.wiki-table td{padding:7px 12px;border:1px solid var(--border);font-size:13px}
+.wiki-table tr:hover td{background:var(--surface2)}
+.sort-asc::after{content:' ▲'}
+.sort-desc::after{content:' ▼'}
+.tier{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
+.t1{background:#374151;color:#9ca3af}.t2{background:#164e63;color:#67e8f9}.t3{background:#14532d;color:#86efac}
+.t4{background:#713f12;color:#fcd34d}.t5{background:#7c2d12;color:#fb923c}.t6{background:#581c87;color:#d8b4fe}
+.t7{background:#1e3a8a;color:#93c5fd}.t8{background:#064e3b;color:#6ee7b7}.t9{background:#7f1d1d;color:#fca5a5}
+.t10{background:#1c1917;color:#f97316;border:1px solid #f97316}.t11{background:#0f172a;color:#f59e0b;border:1px solid #f59e0b}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px;cursor:pointer;transition:.15s;text-align:center}
+.card:hover{border-color:var(--link);background:var(--surface2);transform:translateY(-2px)}
+.card img{width:64px;height:64px;object-fit:contain;display:block;margin:0 auto 8px}
+.card .card-name{font-size:13px;font-weight:600;color:#fff}
+.card .card-sub{font-size:11px;color:var(--text-dim);margin-top:2px}
+.ability-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.ability-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:14px;cursor:pointer;transition:.15s;display:flex;gap:12px;align-items:flex-start}
+.ability-card:hover{border-color:var(--link);background:var(--surface2)}
+.ability-card img{width:48px;height:48px;flex-shrink:0}
+.fish-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.fish-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px;cursor:pointer;transition:.15s}
+.fish-card:hover{border-color:var(--link);background:var(--surface2)}
+.fish-card .fish-sprites{display:flex;gap:8px;justify-content:center;margin-bottom:8px}
+.fish-card .fish-sprites img{width:48px;height:48px;object-fit:contain}
+.fish-card .fish-name{text-align:center;font-weight:700;color:#fff;margin-bottom:4px}
+.fish-card .fish-stats{display:flex;justify-content:space-around;font-size:12px;color:var(--text-dim)}
+.pet-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
+.pet-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px;cursor:pointer;text-align:center;transition:.15s}
+.pet-card:hover{border-color:var(--link);background:var(--surface2)}
+.pet-card img{width:72px;height:72px;object-fit:contain;margin:0 auto 8px;display:block}
+.pet-card .pet-name{font-size:13px;font-weight:600;color:#fff}
+.home-hero{background:linear-gradient(135deg,#0a0b18,#1a1d35);border:1px solid var(--border);border-radius:8px;padding:32px;margin-bottom:24px;text-align:center}
+.home-hero h1{font-size:36px;color:var(--gold);margin-bottom:8px}
+.home-hero p{color:var(--text-dim);font-size:16px}
+.home-categories{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;margin-bottom:24px}
+.home-cat{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:20px 16px;cursor:pointer;transition:.15s;text-align:center}
+.home-cat:hover{border-color:var(--link);background:var(--surface2);transform:translateY(-2px)}
+.home-cat .hc-icon{font-size:28px;margin-bottom:8px}
+.home-cat .hc-name{font-weight:700;color:#fff;margin-bottom:4px}
+.home-cat .hc-count{font-size:12px;color:var(--text-dim)}
+.detail-desc{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--link);padding:14px 16px;margin-bottom:20px;font-size:14px}
+.section-header{font-size:16px;font-weight:700;color:var(--gold);border-bottom:1px solid var(--border);padding-bottom:6px;margin:20px 0 12px}
+.stat-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px}
+.stat-row:last-child{border-bottom:none}
+.stat-label{color:var(--text-dim)}
+.stat-val{font-weight:700;color:#fff}
+.ss-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.ss-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:14px;cursor:pointer;transition:.15s;display:flex;gap:12px}
+.ss-card:hover{border-color:var(--link);background:var(--surface2)}
+.ss-card img{width:56px;height:56px;flex-shrink:0;object-fit:contain}
+.ss-name{font-weight:700;color:#fff;margin-bottom:2px}
+.ss-desc{font-size:12px;color:var(--text-dim)}
+.rank-badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:11px;font-weight:700;margin:1px}
+.rank1{background:#374151;color:#d1d5db}.rank2{background:#164e63;color:#7dd3fc}.rank3{background:#713f12;color:#fcd34d}
+.cs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.cs-card{background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:12px;cursor:pointer;transition:.15s}
+.cs-card:hover{border-color:var(--link);background:var(--surface2)}
+.cs-name{font-weight:700;color:#fff;font-size:13px}
+.mob-icon{width:28px;height:28px;object-fit:contain;flex-shrink:0;vertical-align:middle;margin-right:6px}
+.clearfix::after{content:'';display:table;clear:both}
+@media(max-width:768px){#sidebar{display:none}#main{margin-left:0}.infobox{float:none;margin:0 0 20px;max-width:100%}}
+</style>
+</head>
+<body>
+<div id="header">
+  <div id="logo" onclick="navigate('home')">Harpagia <span>Wiki</span></div>
+  <button id="back-btn" onclick="goBack()">&#8592; Back</button>
+  <div id="search-wrap">
+    <input id="search" type="text" placeholder="Search monsters, items, abilities...">
+    <div id="search-results"></div>
+  </div>
+  <nav id="nav-links">
+    <a href="#" onclick="navigate('monsters');return false">Monsters</a>
+    <a href="#" onclick="navigate('abilities');return false">Abilities</a>
+    <a href="#" onclick="navigate('weapons');return false">Weapons</a>
+    <a href="#" onclick="navigate('fishing');return false">Fishing</a>
+    <a href="#" onclick="navigate('soulstones');return false">Soulstones</a>
+    <a href="#" onclick="navigate('pets');return false">Pets</a>
+  </nav>
+</div>
+<div id="layout">
+  <div id="sidebar">
+    <div class="cat-header" onclick="toggleCat('cat-combat')">Combat <span id="cat-combat-arrow">▼</span></div>
+    <div class="cat-links" id="cat-combat">
+      <a href="#" onclick="navigate('monsters');return false">Monsters</a>
+      <a href="#" onclick="navigate('abilities');return false">Abilities</a>
+      <a href="#" onclick="navigate('weapons');return false">Weapons</a>
+      <a href="#" onclick="navigate('armor');return false">Armour</a>
+      <a href="#" onclick="navigate('soulstones');return false">Soulstones</a>
+      <a href="#" onclick="navigate('sigils');return false">Sigils</a>
+    </div>
+    <div class="cat-header" onclick="toggleCat('cat-skills')">Skills <span id="cat-skills-arrow">▼</span></div>
+    <div class="cat-links" id="cat-skills">
+      <a href="#" onclick="navigate('fishing');return false">Fishing</a>
+      <a href="#" onclick="navigate('mining');return false">Mining</a>
+      <a href="#" onclick="navigate('pets');return false">Pets</a>
+      <a href="#" onclick="navigate('scrolls');return false">Scrolls</a>
+      <a href="#" onclick="navigate('cardsets');return false">Card Sets</a>
+    </div>
+    <div class="cat-header" onclick="toggleCat('cat-world')">World <span id="cat-world-arrow">▼</span></div>
+    <div class="cat-links" id="cat-world">
+      <a href="#" onclick="navigate('locations');return false">Locations</a>
+      <a href="#" onclick="navigate('mechanics');return false">Mechanics</a>
+    </div>
+  </div>
+  <div id="main"></div>
+</div>
+<script>
+const IMG='harpagia2/March30thRuneUpdate/ExtractedData/v1.76.0_decoded/build/apk/res/drawable-mdpi/';
+const MOBS=[{id:43,name:"Abyssal Bloom",tier:6,hp:2620,power:280,defence:34,speed:159,weaponry:202,uniqueLootChance:1150},{id:44,name:"Abyssal Ent",tier:6,hp:2570,power:302,defence:31,speed:165,weaponry:215,uniqueLootChance:1100},{id:46,name:"Abyssal Hopper",tier:6,hp:2640,power:312,defence:43,speed:176,weaponry:244,uniqueLootChance:1000},{id:48,name:"Abyssal Mole",tier:6,hp:2930,power:348,defence:28,speed:181,weaponry:251,uniqueLootChance:900},{id:49,name:"Abyssal Pincher",tier:6,hp:2980,power:357,defence:35,speed:187,weaponry:259,uniqueLootChance:850},{id:42,name:"Abyssal Salamander",tier:6,hp:2490,power:273,defence:41,speed:154,weaponry:191,uniqueLootChance:1200},{id:45,name:"Abyssal Shroom",tier:6,hp:2730,power:307,defence:36,speed:169,weaponry:221,uniqueLootChance:1050},{id:41,name:"Abyssal Slime",tier:6,hp:2460,power:254,defence:44,speed:146,weaponry:183,uniqueLootChance:1250},{id:47,name:"Abyssal Snell",tier:6,hp:2850,power:337,defence:37,speed:172,weaponry:239,uniqueLootChance:950},{id:50,name:"Abyssal Yeti",tier:6,hp:3270,power:386,defence:40,speed:185,weaponry:237,uniqueLootChance:800},{id:51,name:"Aethyros",tier:11,hp:1880,power:147,defence:65,speed:113,weaponry:112,uniqueLootChance:null},{id:11,name:"Angelic",tier:2,hp:570,power:30,defence:8,speed:14,weaponry:8,uniqueLootChance:null},{id:84,name:"Anubis",tier:10,hp:82800,power:520,defence:176,speed:288,weaponry:240,uniqueLootChance:45000},{id:94,name:"Armored Bookend",tier:5,hp:2650,power:226,defence:52,speed:143,weaponry:160,uniqueLootChance:null},{id:18,name:"Armored Zombie",tier:2,hp:840,power:64,defence:26,speed:34,weaponry:15,uniqueLootChance:null},{id:93,name:"Auger",tier:5,hp:2710,power:213,defence:54,speed:139,weaponry:144,uniqueLootChance:null},{id:60,name:"Azure Block",tier:7,hp:6730,power:381,defence:281,speed:224,weaponry:209,uniqueLootChance:4100},{id:52,name:"Azure Slime",tier:7,hp:4850,power:354,defence:212,speed:191,weaponry:174,uniqueLootChance:5500},{id:22,name:"Block",tier:3,hp:1060,power:78,defence:46,speed:51,weaponry:12,uniqueLootChance:null},{id:3,name:"Bloom",tier:1,hp:100,power:8,defence:5,speed:4,weaponry:1,uniqueLootChance:null},{id:28,name:"Bookend",tier:3,hp:1540,power:89,defence:48,speed:76,weaponry:44,uniqueLootChance:null},{id:19,name:"Claw",tier:2,hp:760,power:55,defence:22,speed:54,weaponry:31,uniqueLootChance:null},{id:32,name:"Corrupted Block",tier:4,hp:1980,power:108,defence:57,speed:94,weaponry:43,uniqueLootChance:null},{id:38,name:"Corrupted Bookend",tier:4,hp:2640,power:124,defence:72,speed:112,weaponry:82,uniqueLootChance:null},{id:34,name:"Corrupted Claw",tier:4,hp:2240,power:112,defence:60,speed:96,weaponry:62,uniqueLootChance:null},{id:40,name:"Corrupted Dragon",tier:4,hp:2930,power:125,defence:90,speed:118,weaponry:76,uniqueLootChance:null},{id:37,name:"Corrupted Hoof",tier:4,hp:2560,power:121,defence:103,speed:104,weaponry:45,uniqueLootChance:null},{id:36,name:"Corrupted Knight",tier:4,hp:2340,power:126,defence:88,speed:98,weaponry:57,uniqueLootChance:null},{id:39,name:"Corrupted Raptor",tier:4,hp:3240,power:122,defence:72,speed:100,weaponry:61,uniqueLootChance:null},{id:30,name:"Dragon",tier:3,hp:2040,power:91,defence:46,speed:74,weaponry:38,uniqueLootChance:null},{id:92,name:"Drake",tier:5,hp:2750,power:195,defence:58,speed:137,weaponry:133,uniqueLootChance:null},{id:82,name:"Dravok",tier:10,hp:34180,power:218,defence:92,speed:129,weaponry:145,uniqueLootChance:45000},{id:90,name:"Earth Floater",tier:5,hp:2680,power:177,defence:61,speed:133,weaponry:114,uniqueLootChance:null},{id:16,name:"Earth Hopper",tier:2,hp:780,power:51,defence:24,speed:31,weaponry:10,uniqueLootChance:null},{id:73,name:"Embertail",tier:9,hp:14860,power:431,defence:382,speed:305,weaponry:292,uniqueLootChance:1500},{id:4,name:"Ent",tier:1,hp:160,power:8,defence:7,speed:4,weaponry:3,uniqueLootChance:null},{id:9,name:"Floater",tier:1,hp:340,power:30,defence:5,speed:11,weaponry:6,uniqueLootChance:null},{id:56,name:"Frost Floater",tier:7,hp:5740,power:374,defence:236,speed:208,weaponry:198,uniqueLootChance:4800},{id:57,name:"Frost Golem",tier:7,hp:6030,power:378,defence:244,speed:210,weaponry:199,uniqueLootChance:4650},{id:55,name:"Frost Hare",tier:7,hp:5510,power:367,defence:231,speed:202,weaponry:194,uniqueLootChance:4950},{id:58,name:"Frost Snapper",tier:7,hp:6170,power:386,defence:257,speed:215,weaponry:201,uniqueLootChance:4500},{id:54,name:"Frost Wolf",tier:7,hp:5280,power:365,defence:220,speed:201,weaponry:190,uniqueLootChance:5100},{id:59,name:"Frost Yeti",tier:7,hp:6520,power:375,defence:271,speed:219,weaponry:203,uniqueLootChance:4350},{id:61,name:"Frozen Wight",tier:7,hp:7130,power:394,defence:294,speed:234,weaponry:218,uniqueLootChance:3950},{id:53,name:"Glaciertail",tier:7,hp:5110,power:360,defence:217,speed:195,weaponry:181,uniqueLootChance:5350},{id:23,name:"Golem",tier:3,hp:1150,power:84,defence:42,speed:56,weaponry:14,uniqueLootChance:null},{id:95,name:"Great Knight",tier:5,hp:2620,power:239,defence:50,speed:148,weaponry:169,uniqueLootChance:null},{id:27,name:"Hoof",tier:3,hp:1480,power:81,defence:61,speed:65,weaponry:38,uniqueLootChance:null},{id:6,name:"Hopper",tier:1,hp:240,power:14,defence:8,speed:8,weaponry:4,uniqueLootChance:null},{id:96,name:"Horned Yeti",tier:5,hp:2680,power:248,defence:48,speed:151,weaponry:176,uniqueLootChance:null},{id:77,name:"Infernal Claw",tier:9,hp:16300,power:463,defence:420,speed:327,weaponry:318,uniqueLootChance:1100},{id:76,name:"Infernal Floater",tier:9,hp:15900,power:455,defence:411,speed:324,weaponry:311,uniqueLootChance:1200},{id:81,name:"Infernal Guardian",tier:9,hp:18390,power:492,defence:456,speed:351,weaponry:343,uniqueLootChance:700},{id:75,name:"Infernal Hare",tier:9,hp:15540,power:447,defence:404,speed:319,weaponry:303,uniqueLootChance:1300},{id:78,name:"Infernal Hopper",tier:9,hp:16660,power:469,defence:428,speed:331,weaponry:327,uniqueLootChance:1000},{id:79,name:"Infernal Pincher",tier:9,hp:17060,power:476,defence:436,speed:333,weaponry:335,uniqueLootChance:900},{id:72,name:"Infernal Slime",tier:9,hp:14520,power:423,defence:378,speed:295,weaponry:285,uniqueLootChance:1600},{id:74,name:"Infernal Wolf",tier:9,hp:15240,power:439,defence:390,speed:310,weaponry:297,uniqueLootChance:1400},{id:80,name:"Infernal Yeti",tier:9,hp:17390,power:485,defence:446,speed:345,weaponry:339,uniqueLootChance:800},{id:26,name:"Knight",tier:3,hp:1240,power:87,defence:55,speed:59,weaponry:46,uniqueLootChance:null},{id:33,name:"Lava Golem",tier:4,hp:2120,power:118,defence:75,speed:87,weaponry:34,uniqueLootChance:null},{id:35,name:"Lava Snapper",tier:4,hp:2450,power:108,defence:76,speed:94,weaponry:53,uniqueLootChance:null},{id:91,name:"Murkwing",tier:5,hp:2730,power:186,defence:57,speed:136,weaponry:125,uniqueLootChance:null},{id:31,name:"Mutated Orc",tier:4,hp:1800,power:98,defence:70,speed:84,weaponry:46,uniqueLootChance:null},{id:21,name:"Orc",tier:3,hp:900,power:61,defence:38,speed:62,weaponry:24,uniqueLootChance:null},{id:20,name:"Pirate Skeleton",tier:2,hp:910,power:55,defence:28,speed:47,weaponry:32,uniqueLootChance:null},{id:29,name:"Raptor",tier:3,hp:1840,power:89,defence:51,speed:64,weaponry:42,uniqueLootChance:null},{id:2,name:"Salamander",tier:1,hp:70,power:6,defence:2,speed:3,weaponry:1,uniqueLootChance:null},{id:24,name:"Shadow",tier:3,hp:970,power:78,defence:37,speed:68,weaponry:52,uniqueLootChance:null},{id:5,name:"Shroom",tier:1,hp:220,power:10,defence:7,speed:8,weaponry:2,uniqueLootChance:null},{id:10,name:"Skeleton",tier:1,hp:450,power:22,defence:7,speed:17,weaponry:9,uniqueLootChance:null},{id:1,name:"Slime",tier:1,hp:30,power:1,defence:1,speed:1,weaponry:1,uniqueLootChance:null},{id:25,name:"Snapper",tier:3,hp:1290,power:78,defence:45,speed:64,weaponry:34,uniqueLootChance:null},{id:7,name:"Snell",tier:1,hp:280,power:18,defence:14,speed:6,weaponry:3,uniqueLootChance:null},{id:13,name:"Spiked Bloom",tier:2,hp:620,power:34,defence:18,speed:24,weaponry:8,uniqueLootChance:null},{id:15,name:"Spiked Shroom",tier:2,hp:520,power:54,defence:26,speed:29,weaponry:15,uniqueLootChance:null},{id:17,name:"Spiked Snell",tier:2,hp:720,power:57,defence:32,speed:37,weaponry:8,uniqueLootChance:null},{id:88,name:"Terran Salamander",tier:5,hp:2700,power:154,defence:60,speed:130,weaponry:92,uniqueLootChance:null},{id:89,name:"Timberwolf",tier:5,hp:2740,power:162,defence:58,speed:132,weaponry:105,uniqueLootChance:null},{id:0,name:"Training Dummy",tier:null,hp:99999999999,power:0,defence:0,speed:0,weaponry:0,uniqueLootChance:null},{id:85,name:"Treanth",tier:10,hp:108840,power:646,defence:119,speed:322,weaponry:281,uniqueLootChance:13500},{id:12,name:"Tusk",tier:2,hp:540,power:31,defence:16,speed:17,weaponry:12,uniqueLootChance:null},{id:62,name:"Verdant Bat",tier:8,hp:9720,power:351,defence:278,speed:245,weaponry:223,uniqueLootChance:3000},{id:64,name:"Verdant Block",tier:8,hp:10670,power:361,defence:291,speed:254,weaponry:231,uniqueLootChance:2600},{id:63,name:"Verdant Chameleon",tier:8,hp:10190,power:357,defence:283,speed:249,weaponry:226,uniqueLootChance:2800},{id:71,name:"Verdant Dragon",tier:8,hp:13620,power:402,defence:355,speed:285,weaponry:274,uniqueLootChance:1200},{id:66,name:"Verdant Drill",tier:8,hp:11360,power:373,defence:316,speed:264,weaponry:242,uniqueLootChance:2200},{id:65,name:"Verdant Hare",tier:8,hp:10950,power:367,defence:309,speed:259,weaponry:237,uniqueLootChance:2400},{id:67,name:"Verdant Hopper",tier:8,hp:11730,power:381,defence:322,speed:270,weaponry:251,uniqueLootChance:2000},{id:69,name:"Verdant Mole",tier:8,hp:12580,power:390,defence:337,speed:279,weaponry:262,uniqueLootChance:1600},{id:70,name:"Verdant Pincher",tier:8,hp:12970,power:396,defence:346,speed:282,weaponry:270,uniqueLootChance:1400},{id:68,name:"Verdant Snapper",tier:8,hp:12190,power:385,defence:329,speed:274,weaponry:256,uniqueLootChance:1800},{id:86,name:"Vorrath",tier:10,hp:128460,power:794,defence:671,speed:378,weaponry:312,uniqueLootChance:9001},{id:87,name:"Winged Slime",tier:5,hp:2740,power:141,defence:64,speed:127,weaponry:81,uniqueLootChance:null},{id:83,name:"Xerathin",tier:10,hp:57660,power:412,defence:144,speed:234,weaponry:197,uniqueLootChance:45000},{id:8,name:"Zombie",tier:1,hp:330,power:22,defence:5,speed:12,weaponry:4,uniqueLootChance:null}];
+const ABILITIES=[{id:"Champion",name:"Champion",description:"Boosts stats by 15% (power, defence, speed, weaponry) for the duration of this battle.",shortDescription:"+15% all stats",cooldown:25,level:3,mp:3000,gem:15},{id:"Cleanse",name:"Cleanse",description:"Removes all debuffs, including paralysis.",shortDescription:"Remove debuffs",cooldown:25,level:2,mp:2000,gem:10},{id:"Concentration",name:"Concentration",description:"Doubles current stat buffs for the duration of this battle.",shortDescription:"2x stat buffs",cooldown:25,level:3,mp:3000,gem:15},{id:"Decimate",name:"Decimate",description:"Deals massive damage to the enemy.",shortDescription:"Massive damage",cooldown:20,level:2,mp:2000,gem:10},{id:"Drain",name:"Drain",description:"Drains enemy stats, reducing their effectiveness.",shortDescription:"Drain enemy stats",cooldown:20,level:2,mp:2000,gem:10},{id:"Earthquake",name:"Earthquake",description:"Deals area damage and reduces enemy speed.",shortDescription:"AoE damage + slow",cooldown:20,level:2,mp:2000,gem:10},{id:"Execute",name:"Execute",description:"Instantly defeats enemies below a health threshold.",shortDescription:"Execute low HP",cooldown:30,level:3,mp:3000,gem:15},{id:"Frenzy",name:"Frenzy",description:"Greatly increases attack speed for a short duration.",shortDescription:"High attack speed",cooldown:20,level:2,mp:2000,gem:10},{id:"Gust",name:"Gust",description:"Blows the enemy back, dealing damage and reducing their speed.",shortDescription:"Damage + speed reduce",cooldown:15,level:1,mp:1000,gem:5},{id:"Haste",name:"Haste",description:"Greatly increases speed for the duration of battle.",shortDescription:"+speed buff",cooldown:20,level:2,mp:2000,gem:10},{id:"Heal",name:"Heal",description:"Restores a portion of your health.",shortDescription:"Restore HP",cooldown:15,level:1,mp:1000,gem:5},{id:"Ignite",name:"Ignite",description:"Sets the enemy on fire, dealing damage over time.",shortDescription:"DoT fire damage",cooldown:15,level:1,mp:1000,gem:5},{id:"Inferno",name:"Inferno",description:"Unleashes a massive fire attack dealing huge damage.",shortDescription:"Huge fire damage",cooldown:25,level:3,mp:3000,gem:15},{id:"Leech",name:"Leech",description:"Steals HP from the enemy with each attack.",shortDescription:"HP steal",cooldown:20,level:2,mp:2000,gem:10},{id:"Paralyze",name:"Paralyze",description:"Prevents the enemy from attacking for several turns.",shortDescription:"Stun enemy",cooldown:25,level:3,mp:3000,gem:15},{id:"Protect",name:"Protect",description:"Reduces incoming damage for the duration of battle.",shortDescription:"Damage reduction",cooldown:20,level:2,mp:2000,gem:10},{id:"Rage",name:"Rage",description:"Massively increases power at the cost of defence.",shortDescription:"+power -defence",cooldown:20,level:2,mp:2000,gem:10},{id:"Regen",name:"Regen",description:"Regenerates health every turn for the duration of battle.",shortDescription:"HP regen per turn",cooldown:20,level:2,mp:2000,gem:10},{id:"Shield",name:"Shield",description:"Creates a shield that absorbs damage.",shortDescription:"Absorb damage",cooldown:15,level:1,mp:1000,gem:5},{id:"Smite",name:"Smite",description:"Deals holy damage that ignores a portion of defence.",shortDescription:"Ignore defence",cooldown:20,level:2,mp:2000,gem:10},{id:"Stealth",name:"Stealth",description:"Hides from the enemy, reducing their accuracy.",shortDescription:"Reduce enemy accuracy",cooldown:20,level:2,mp:2000,gem:10},{id:"Toxin",name:"Toxin",description:"Poisons the enemy, dealing damage each turn.",shortDescription:"Poison DoT",cooldown:15,level:1,mp:1000,gem:5},{id:"Warcry",name:"Warcry",description:"Lets out a battle cry that boosts all stats temporarily.",shortDescription:"Boost all stats",cooldown:20,level:2,mp:2000,gem:10}];
+const FISH=[{name:"Anchovy",heal:30,healCooked:40,exp:15,levelRequired:1},{name:"Mackerel",heal:50,healCooked:60,exp:20,levelRequired:6},{name:"Squid",heal:70,healCooked:90,exp:25,levelRequired:11},{name:"Sturgeon",heal:90,healCooked:110,exp:45,levelRequired:16},{name:"Goby",heal:110,healCooked:140,exp:65,levelRequired:21},{name:"Betta",heal:130,healCooked:160,exp:90,levelRequired:26},{name:"Leopoldi",heal:150,healCooked:190,exp:120,levelRequired:31},{name:"Carp",heal:170,healCooked:210,exp:155,levelRequired:36},{name:"Blowfish",heal:190,healCooked:240,exp:195,levelRequired:41},{name:"Coelacanth",heal:210,healCooked:260,exp:240,levelRequired:46},{name:"Oarfish",heal:230,healCooked:290,exp:290,levelRequired:51},{name:"Catfish",heal:250,healCooked:310,exp:345,levelRequired:56},{name:"Flounder",heal:270,healCooked:330,exp:405,levelRequired:61},{name:"Manta Ray",heal:290,healCooked:370,exp:470,levelRequired:66},{name:"Eel",heal:310,healCooked:390,exp:540,levelRequired:71},{name:"Tuna",heal:330,healCooked:410,exp:615,levelRequired:76},{name:"Anglerfish",heal:350,healCooked:440,exp:695,levelRequired:81},{name:"Hammerhead",heal:370,healCooked:470,exp:780,levelRequired:86},{name:"Swordfish",heal:390,healCooked:490,exp:870,levelRequired:91},{name:"Humpback",heal:410,healCooked:510,exp:965,levelRequired:96},{name:"Crucian",heal:440,healCooked:550,exp:1065,levelRequired:101},{name:"Loach",heal:460,healCooked:570,exp:1170,levelRequired:106},{name:"Shad",heal:490,healCooked:610,exp:1280,levelRequired:111},{name:"Sleeper",heal:520,healCooked:650,exp:1395,levelRequired:116},{name:"Garra",heal:550,healCooked:680,exp:1515,levelRequired:121},{name:"Arowana",heal:580,healCooked:720,exp:1640,levelRequired:126},{name:"Piranha",heal:610,healCooked:760,exp:1770,levelRequired:131},{name:"Pirarucu",heal:640,healCooked:800,exp:1905,levelRequired:136},{name:"Snakehead",heal:670,healCooked:830,exp:2045,levelRequired:141},{name:"Mylodon",heal:700,healCooked:870,exp:2190,levelRequired:146},{name:"Gold Ribbon",heal:730,healCooked:910,exp:2340,levelRequired:151},{name:"Splendidus",heal:760,healCooked:950,exp:2495,levelRequired:156},{name:"Harisenbon",heal:790,healCooked:980,exp:2655,levelRequired:161},{name:"Leatherjacket",heal:820,healCooked:1020,exp:2820,levelRequired:166},{name:"Mandarin",heal:850,healCooked:1060,exp:2990,levelRequired:171},{name:"Daggertooth",heal:880,healCooked:1100,exp:3165,levelRequired:176},{name:"Trevally",heal:910,healCooked:1130,exp:3345,levelRequired:181},{name:"Rockfish",heal:940,healCooked:1170,exp:3530,levelRequired:186},{name:"Sea Bass",heal:970,healCooked:1210,exp:3720,levelRequired:191},{name:"Great White",heal:1000,healCooked:1250,exp:3915,levelRequired:196}];
+const SOULSTONES=[{name:"Ability Master",shortDescription:"Ability cooldown reduction",description:"[3, 8, 15] turn ability cooldown reduction",rankBonuses:[3,8,15]},{name:"Adrenaline",shortDescription:"Bonus damage, crit bonus",description:"[0.2, 0.4, 0.8]% bonus damage per stack. Each attack increases stacks by 1 up to 10. At 10 stacks, receive [3, 8, 15]% crit rate bonus.",rankBonuses:[0.2,0.4,0.8]},{name:"Bloodlust",shortDescription:"Bonus power, crit damage bonus",description:"[0.2, 0.4, 0.8]% bonus power per stack. Each attack increases stacks by 1 up to 10. At 10 stacks, receive [4, 10, 20]% crit damage bonus.",rankBonuses:[0.2,0.4,0.8]},{name:"Blunt Force",shortDescription:"Crit damage bonus, damage decrease",description:"[8, 18, 40]% bonus crit damage, 5% decreased damage.",rankBonuses:[8,18,40]},{name:"Bountiful",shortDescription:"Bonus heal from food",description:"[4, 10, 20]% bonus heal from food.",rankBonuses:[4,10,20]},{name:"Crit Curse",shortDescription:"Critical damage reduction",description:"[4, 10, 20]% critical damage reduction (curse).",rankBonuses:[4,10,20]},{name:"Defence Curse",shortDescription:"Defence reduction",description:"[4, 10, 20]% defence reduction (curse).",rankBonuses:[4,10,20]},{name:"Emergency Rescue",shortDescription:"Recover HP when low HP",description:"Recover [8, 18, 40]% HP when you drop below a health threshold.",rankBonuses:[8,18,40]},{name:"Fortitude",shortDescription:"Damage reduction",description:"[5, 12, 25]% damage reduction.",rankBonuses:[5,12,25]},{name:"Haste",shortDescription:"Speed bonus, power decrease",description:"[3, 8, 15]% speed bonus, slight power decrease.",rankBonuses:[3,8,15]},{name:"Heavy Armor",shortDescription:"Defence bonus",description:"[4, 10, 20]% defence bonus.",rankBonuses:[4,10,20]},{name:"Hexed",shortDescription:"Bonus power, healing -25%",description:"[3, 8, 15]% bonus power, but healing reduced by 25%.",rankBonuses:[3,8,15]},{name:"Juggernaut",shortDescription:"Bonus power, speed -5%",description:"[4, 10, 20]% bonus power, speed reduced by 5%.",rankBonuses:[4,10,20]},{name:"Merciless",shortDescription:"Bonus damage to enemies below 30% HP",description:"[9, 22, 36]% bonus damage to enemies below 30% HP.",rankBonuses:[9,22,36]},{name:"Power Curse",shortDescription:"Power reduction",description:"[2, 5, 10]% power reduction (curse).",rankBonuses:[2,5,10]},{name:"Precision",shortDescription:"Crit bonus, crit damage decrease",description:"[4, 10, 20]% crit rate bonus, crit damage slightly decreased.",rankBonuses:[4,10,20]},{name:"Preemptive Strike",shortDescription:"Bonus damage if enemy at full HP",description:"[30, 80, 160]% bonus damage when enemy is at full HP.",rankBonuses:[30,80,160]},{name:"Speed Curse",shortDescription:"Speed reduction",description:"[2, 5, 10]% speed reduction (curse).",rankBonuses:[2,5,10]},{name:"Tenacity",shortDescription:"Bonus power under 50% HP",description:"[3, 8, 15]% bonus power when below 50% HP.",rankBonuses:[3,8,15]},{name:"Vengeance",shortDescription:"Bonus power, damage taken +15%",description:"[4, 10, 20]% bonus power, but damage taken increased by 15%.",rankBonuses:[4,10,20]}];
+const WEAPONS=[{name:"Bindlecane",power:[25,25],levelRequired:1,ranks:1},{name:"Bronze Dagger",power:[1,20],levelRequired:1,ranks:20},{name:"Bronze Sword",power:[2,40],levelRequired:4,ranks:20},{name:"Bronze Axe",power:[3,60],levelRequired:7,ranks:19},{name:"Iron Dagger",power:[5,24],levelRequired:11,ranks:20},{name:"Iron Sword",power:[6,44],levelRequired:14,ranks:20},{name:"Iron Axe",power:[8,65],levelRequired:17,ranks:20},{name:"Steel Dagger",power:[10,29],levelRequired:21,ranks:20},{name:"Steel Sword",power:[11,49],levelRequired:24,ranks:19},{name:"Steel Axe",power:[13,70],levelRequired:27,ranks:20},{name:"Silver Dagger",power:[15,53],levelRequired:31,ranks:19},{name:"Silver Sword",power:[16,73],levelRequired:34,ranks:20},{name:"Silver Axe",power:[18,94],levelRequired:37,ranks:20},{name:"Gold Dagger",power:[20,58],levelRequired:41,ranks:20},{name:"Gold Sword",power:[22,79],levelRequired:44,ranks:19},{name:"Gold Axe",power:[24,100],levelRequired:47,ranks:20},{name:"Platinum Dagger",power:[27,65],levelRequired:51,ranks:20},{name:"Platinum Sword",power:[30,87],levelRequired:54,ranks:20},{name:"Platinum Axe",power:[35,111],levelRequired:57,ranks:20},{name:"Obsidian Dagger",power:[40,78],levelRequired:61,ranks:20},{name:"Obsidian Sword",power:[46,103],levelRequired:64,ranks:20},{name:"Obsidian Axe",power:[52,128],levelRequired:67,ranks:20},{name:"Crystal Dagger",power:[59,116],levelRequired:71,ranks:20},{name:"Crystal Sword",power:[67,143],levelRequired:74,ranks:20},{name:"Crystal Axe",power:[77,172],levelRequired:77,ranks:20},{name:"Eldritch Dagger",power:[88,145],levelRequired:81,ranks:20},{name:"Eldritch Sword",power:[100,176],levelRequired:84,ranks:20},{name:"Eldritch Axe",power:[113,208],levelRequired:87,ranks:20},{name:"Orichalcum Dagger",power:[127,184],levelRequired:91,ranks:20},{name:"Orichalcum Sword",power:[143,219],levelRequired:94,ranks:20},{name:"Orichalcum Axe",power:[160,255],levelRequired:97,ranks:20},{name:"Abyssal Axe",power:[213,327],levelRequired:101,ranks:20},{name:"Abyssal Dagger",power:[180,252],levelRequired:101,ranks:19},{name:"Abyssal Sword",power:[194,289],levelRequired:101,ranks:20},{name:"Dravokin's Keris",power:[218,370],levelRequired:101,ranks:20},{name:"Abyssal Greataxe",power:[248,400],levelRequired:111,ranks:20},{name:"Blade of Aether",power:[1,420],levelRequired:121,ranks:40},{name:"Swift Blade",power:[160,350],levelRequired:131,ranks:20},{name:"Dreadfang Shiv",power:[205,433],levelRequired:171,ranks:20}];
+const ARMOR=[{name:"Bronze Chestplate",def:[3,60],levelRequired:7,ranks:20},{name:"Iron Chestplate",def:[9,66],levelRequired:17,ranks:20},{name:"Steel Chestplate",def:[15,72],levelRequired:27,ranks:20},{name:"Silver Chestplate",def:[23,99],levelRequired:37,ranks:20},{name:"Gold Chestplate",def:[33,109],levelRequired:47,ranks:20},{name:"Platinum Chestplate",def:[45,121],levelRequired:57,ranks:19},{name:"Obsidian Chestplate",def:[59,135],levelRequired:67,ranks:20},{name:"Crystal Chestplate",def:[75,170],levelRequired:77,ranks:20},{name:"Eldritch Chestplate",def:[93,188],levelRequired:87,ranks:20},{name:"Orichalcum Chestplate",def:[113,208],levelRequired:97,ranks:19},{name:"Abyssal Chestplate",def:[135,249],levelRequired:101,ranks:20},{name:"Viridian Chestplate",def:[25,177],levelRequired:151,ranks:20}];
+const HELMETS=[{name:"Bronze Helm",def:[1,20],levelRequired:1,ranks:20},{name:"Iron Helm",def:[3,22],levelRequired:11,ranks:20},{name:"Steel Helm",def:[6,25],levelRequired:21,ranks:19},{name:"Silver Helm",def:[8,44],levelRequired:31,ranks:19},{name:"Gold Helm",def:[12,50],levelRequired:41,ranks:20},{name:"Platinum Helm",def:[17,55],levelRequired:51,ranks:19},{name:"Obsidian Helm",def:[23,61],levelRequired:61,ranks:20},{name:"Crystal Helm",def:[31,88],levelRequired:71,ranks:20},{name:"Eldritch Helm",def:[40,97],levelRequired:81,ranks:20},{name:"Orichalcum Helm",def:[50,107],levelRequired:91,ranks:20},{name:"Abyssal Helm",def:[61,137],levelRequired:101,ranks:20},{name:"Viridian Helm",def:[5,81],levelRequired:151,ranks:20}];
+const GREAVES=[{name:"Bronze Greaves",def:[2,40],levelRequired:4,ranks:20},{name:"Iron Greaves",def:[6,44],levelRequired:14,ranks:19},{name:"Steel Greaves",def:[10,48],levelRequired:24,ranks:20},{name:"Silver Greaves",def:[15,72],levelRequired:34,ranks:20},{name:"Gold Greaves",def:[21,78],levelRequired:44,ranks:20},{name:"Platinum Greaves",def:[29,86],levelRequired:54,ranks:20},{name:"Obsidian Greaves",def:[37,94],levelRequired:64,ranks:20},{name:"Crystal Greaves",def:[45,121],levelRequired:74,ranks:20},{name:"Eldritch Greaves",def:[54,130],levelRequired:84,ranks:20},{name:"Orichalcum Greaves",def:[64,140],levelRequired:94,ranks:20},{name:"Abyssal Greaves",def:[75,170],levelRequired:101,ranks:20},{name:"Viridian Greaves",def:[18,132],levelRequired:151,ranks:20}];
+const SCROLLS=[{id:"lesser_experience_scroll",name:"Lesser Experience Scroll",description:"Grants 50,000 exp in any skill. 1-time use only.",exp:50000,requiredLevel:1,cost:10},{id:"adept_experience_scroll",name:"Adept Experience Scroll",description:"Grants 250,000 exp in any skill. 1-time use only.",exp:250000,requiredLevel:50,cost:30},{id:"superior_experience_scroll",name:"Superior Experience Scroll",description:"Grants 500,000 exp in any skill. 1-time use only.",exp:500000,requiredLevel:75,cost:50},{id:"mythic_experience_scroll",name:"Mythic Experience Scroll",description:"Grants 1,250,000 exp in any skill. 1-time use only.",exp:1250000,requiredLevel:100,cost:100},{id:"scroll_of_haste",name:"Scroll of Haste",description:"Reduces Expedition or Base Camp Research end time by 1 hour. 1-time use.",exp:null,requiredLevel:1,cost:5},{id:"scroll_of_the_artisan",name:"Scroll of the Artisan",description:"Empowers a Skilling Ring effect by 50% permanently. 1-time use.",exp:null,requiredLevel:1,cost:100},{id:"scroll_of_the_warlord",name:"Scroll of the Warlord",description:"Empowers a Combat Ring effect by 50% permanently. 1-time use.",exp:null,requiredLevel:1,cost:100}];
+const MINERALS=[{name:"Opal",levelRequired:1,exp:15,mp:2,geoFragments:1},{name:"Jade",levelRequired:9,exp:20,mp:2,geoFragments:1},{name:"Topaz",levelRequired:17,exp:25,mp:2,geoFragments:1},{name:"Sapphire",levelRequired:25,exp:45,mp:10,geoFragments:5},{name:"Emerald",levelRequired:33,exp:55,mp:10,geoFragments:5},{name:"Ruby",levelRequired:41,exp:65,mp:10,geoFragments:5},{name:"Pyrite",levelRequired:49,exp:90,mp:20,geoFragments:10},{name:"Silver",levelRequired:56,exp:110,mp:20,geoFragments:10},{name:"Platinum",levelRequired:63,exp:120,mp:20,geoFragments:10},{name:"Citrine",levelRequired:70,exp:160,mp:50,geoFragments:25},{name:"Amethyst",levelRequired:76,exp:190,mp:50,geoFragments:25},{name:"Peridot",levelRequired:82,exp:220,mp:50,geoFragments:25},{name:"Eldritch",levelRequired:88,exp:420,mp:100,geoFragments:50},{name:"Voidstone",levelRequired:93,exp:520,mp:100,geoFragments:50},{name:"Orichalcum",levelRequired:98,exp:620,mp:100,geoFragments:50}];
+const COMPONENTS=[{name:"Bronze Component",levelRequired:1,exp:10,geoFragments:2},{name:"Iron Component",levelRequired:11,exp:25,geoFragments:2},{name:"Steel Component",levelRequired:21,exp:45,geoFragments:12},{name:"Silver Component",levelRequired:31,exp:60,geoFragments:12},{name:"Gold Component",levelRequired:41,exp:85,geoFragments:25},{name:"Platinum Component",levelRequired:51,exp:120,geoFragments:25},{name:"Obsidian Component",levelRequired:61,exp:160,geoFragments:50},{name:"Crystal Component",levelRequired:71,exp:235,geoFragments:50},{name:"Eldritch Component",levelRequired:81,exp:295,geoFragments:100},{name:"Orichalcum Component",levelRequired:91,exp:345,geoFragments:100},{name:"Abyssal Component",levelRequired:101,exp:465,geoFragments:200}];
+const AMULETS=[{name:"Amulet of Defence",stat:"defence",statLabel:"Defence",maxRank:20,rankBonus:1,levelRequired:120,slug:"amulet_of_defence"},{name:"Amulet of Power",stat:"power",statLabel:"Power",maxRank:20,rankBonus:1,levelRequired:120,slug:"amulet_of_power"},{name:"Amulet of Speed",stat:"speed",statLabel:"Speed",maxRank:20,rankBonus:1,levelRequired:120,slug:"amulet_of_speed"},{name:"Amulet of Weaponry",stat:"weaponry",statLabel:"Weaponry",maxRank:20,rankBonus:1,levelRequired:120,slug:"amulet_of_weaponry"},{name:"Primordial Amulet",stat:"all",statLabel:"All Stats",maxRank:20,rankBonus:0.7,levelRequired:120,slug:"primordial_amulet"}];
+const PETS=["Abyssal Slime","Azure Slime","Bat","Bear","Bloom","Boar","Cat","Chameleon","Deer","Dog","Dragon","Duck","Ent","Fox","Frog","Glaciertail","Hopper","Infernal Slime","Owl","Parrot","Rabbit","Salamander","Shroom","Snell","Wolf","Zombie"];
+const LOCATIONS=[{name:"The Training Grounds",bg:"training_grounds",tiers:[1],combatLevel:1,unlock:"Available from the start",desc:"The starting area. Perfect for beginners learning the basics of combat. Home to Tier 1 monsters."},{name:"Plains",bg:"plains",tiers:[1,2],combatLevel:1,unlock:"Available from the start",desc:"Open grasslands home to Tier 1–2 creatures. A popular early-game farming spot with Slimes, Salamanders, and Orcs."},{name:"Town Bridge",bg:"bridge",tiers:[2,3],combatLevel:10,unlock:"Unlocked at combat level 10",desc:"A stone bridge crossing into the wilds. Tier 2–3 monsters patrol this area including Armored Zombies and Orcs."},{name:"The Outskirts",bg:"forest_day",tiers:[2,3],combatLevel:15,unlock:"Unlocked at combat level 15",desc:"Dense woodland at the edge of town. Tier 2–3 monsters including Spiked Blooms, Snells, and Knights."},{name:"Hazy Forest",bg:"forest_day",tiers:[3,4],combatLevel:30,unlock:"Unlocked at combat level 30",desc:"A misty, dangerous forest. Tier 3–4 creatures including Dragons, Raptors, and Corrupted Beasts dwell here."},{name:"Midnight Woods",bg:"forest_night",tiers:[4,5],combatLevel:45,unlock:"Unlocked at combat level 45",desc:"The forest at night. Tier 4–5 corrupted and adept monsters with better loot and experience rewards."},{name:"Underground Cave",bg:"underground_cave",tiers:[5],combatLevel:60,unlock:"Unlocked at combat level 60",desc:"Dark subterranean tunnels teeming with Tier 5 creatures including Augers, Drakes, and Great Knights."},{name:"The Abyss",bg:"abyss",tiers:[6],combatLevel:75,unlock:"Unlocked at combat level 75",desc:"A dark dimensional rift. Tier 6 Abyssal creatures lurk here — Abyssal Slimes, Ents, Yetis and more — with unique loot potential."},{name:"The Gauntlet",bg:"gauntlet",tiers:[7],combatLevel:90,unlock:"Unlocked at combat level 90",desc:"A frozen gauntlet of ice and stone. Tier 7 Frost creatures including Frost Wolves, Frost Yetis, Frozen Wights, and Glaciertail."},{name:"Frozen Wasteland",bg:"frozen_wasteland",tiers:[7,8],combatLevel:105,unlock:"Unlocked at combat level 105",desc:"A bitterly cold expanse. Tier 7–8 Frost and Verdant monsters with high loot value and experience."},{name:"Sylvian Grove",bg:"sylvian_grove",tiers:[8],combatLevel:120,unlock:"Unlocked at combat level 120",desc:"A mysterious verdant jungle. Tier 8 Verdant monsters roam here — Bats, Chameleons, Dragons, Moles and more — with valuable drops."},{name:"The Inferno",bg:"inferno",tiers:[9],combatLevel:140,unlock:"Unlocked at combat level 140",desc:"A blazing hellscape. Tier 9 Infernal monsters are the toughest non-boss enemies. Infernal Guardians and Yetis lurk here."},{name:"The Proving Grounds",bg:"proving_grounds",tiers:[10],combatLevel:160,unlock:"Unlocked at combat level 160",desc:"The ultimate challenge arena. Tier 10 boss monsters: Dravok, Xerathin, Anubis, Treanth, and Vorrath."},{name:"Ascension Tower",bg:"ascension_tower",tiers:[11],combatLevel:180,unlock:"Unlocked at combat level 180",desc:"An endgame tower of ultimate challenge. The mythic Aethyros resides here."}];
+const CARD_SETS=["Abyssal Creatures","Ancient Grove","Ashen Duo","Azure Legion","Bat Battalion","Beast and Cub","Beasts of the North","Block Battalion","Burning Vanguard","Burrow Trouble","Canopy Sentinel","Careful Pruner","Cave Dwellers","Cave Explorers","Chefs Delight","Clash of the Titans","Claw Coalition","Corrupted Beasts","Cove Guardians","Cyclopses","Delinquent Duo","Depth Dominion","Depths Below","Dino Rider","Dormant Dwellers","Dragon Kin","Dragon Riders","Dravokian Duo","Earthbound","Earthshakers","Elders of the Past","Elemental Bastion","Elemental Lizards","End of the Beginning","Eruption Within","Eternal Damnation","Experienced Explorers","Feathered Slimes","Fiends of the South","Fiery Ambush","Final Showdown","Fire and Fury","Floater Fathom","Fluffle","Forest Dwellers","Free at Last","Friendly Flock","Frost and Ember","Frostborn","Gelatinous Creatures","Growing Power","Hardened","Healthy Snack","Hidden Predators","Hopper Horde","Horned Beasts","Horrors of the Deep","Inferno Conclave","Inferno Covenant","Inferno Meadows","Knowledge is Power","Light Bringers","Light of Salvation","Lurkers Below","Masked Beings","Mimic","Molten Grasp","Moo Crew","More Than Scales","New Beginnings","Noble Defenders","Nocturne Flutter","Noxious Nemesis","Obedient Followers","Ooze and Bruise","Orcish Horde","Orcs Treat","Pasturebound","Perched Stalker","Pharaonic Guardian","Pincer Pack","Prehistoric","Prickly Predators","Primal Pack","Proficient Diggers","Protectors of the Forest","Radiant Nocturne","Rocks Demise","Salamander Swarm","Scaled Kin","Scorched Depths","Shadow Warren","Shattered Horizons","Shell Shock","Shroom Squad","Skyborne Legion","Slice N Dice","Sludge Squad","Spiky Companions","Spiky Spores","Stiletto","Tamed Beasts","Terra Lifeforms","The Last of Us","Timeless Grove","Tough Shells","Treehugger","Tricksters","Tusk Rider","Twilight Squad","Twin Forge","Twin Predators","Unbreakable Will","Undead Legion","Underworld Minions","Veil of Nightfall","Verdant Stalkers","Verdant Vanguard","Wade and Ember","Weapon Trifecta","Whack a Mole","Wild Growth","Wildwood Sentinels","Windrunners","Winters Hollow","Within the Shadows","Wolf Pack","Worthy","Zombie Horde"];
+
+let _hist=[],_sec='home',_id=null;
+function navigate(s,id){if(_sec)_hist.push({s:_sec,i:_id});_sec=s;_id=id||null;render();window.scrollTo(0,0);}
+function goBack(){if(!_hist.length)return;const p=_hist.pop();_sec=p.s;_id=p.i;render();window.scrollTo(0,0);}
+function fmt(n){if(n===null||n===undefined)return'—';return n.toLocaleString();}
+function tierBadge(t){if(!t)return'<span class="tier t1">Special</span>';return`<span class="tier t${t}">Tier ${t}</span>`;}
+function mobSprite(name){return IMG+'assets_npc_'+name.toLowerCase().replace(/ /g,'_')+'.png';}
+function bc(trail){return'<div class="breadcrumb">'+trail.map((t,i)=>i===trail.length-1?`<b>${t.l}</b>`:`<a href="#" onclick="${t.o};return false">${t.l}</a>`).join('<span> › </span>')+'</div>';}
+function sortTable(tid,col){
+  const t=document.getElementById(tid);if(!t)return;
+  const rows=Array.from(t.querySelectorAll('tbody tr'));
+  const th=t.querySelectorAll('th')[col];
+  const asc=th.classList.contains('sort-asc');
+  t.querySelectorAll('th').forEach(h=>h.classList.remove('sort-asc','sort-desc'));
+  rows.sort((a,b)=>{const av=a.cells[col].dataset.val||a.cells[col].textContent;const bv=b.cells[col].dataset.val||b.cells[col].textContent;const an=parseFloat(av),bn=parseFloat(bv);if(!isNaN(an)&&!isNaN(bn))return asc?bn-an:an-bn;return asc?bv.localeCompare(av):av.localeCompare(bv);});
+  th.classList.add(asc?'sort-desc':'sort-asc');
+  const tb=t.querySelector('tbody');rows.forEach(r=>tb.appendChild(r));
+}
+function toggleCat(id){const el=document.getElementById(id);const ar=document.getElementById(id+'-arrow');if(el.style.display==='none'){el.style.display='';ar.textContent='▼';}else{el.style.display='none';ar.textContent='►';}}
+
+function render(){
+  const main=document.getElementById('main');
+  if(_sec==='home')main.innerHTML=rHome();
+  else if(_sec==='monsters')main.innerHTML=_id?rMonsterD(_id):rMonsters();
+  else if(_sec==='abilities')main.innerHTML=_id?rAbilityD(_id):rAbilities();
+  else if(_sec==='weapons')main.innerHTML=_id?rWeaponD(_id):rWeapons();
+  else if(_sec==='armor')main.innerHTML=_id?rArmorD(_id):rArmor();
+  else if(_sec==='fishing')main.innerHTML=_id?rFishD(_id):rFishing();
+  else if(_sec==='soulstones')main.innerHTML=_id?rSSD(_id):rSoulstones();
+  else if(_sec==='pets')main.innerHTML=rPets();
+  else if(_sec==='cardsets')main.innerHTML=rCardSets();
+  else if(_sec==='locations')main.innerHTML=_id?rLocationD(_id):rLocations();
+  else if(_sec==='sigils')main.innerHTML=rSigils();
+  else if(_sec==='mechanics')main.innerHTML=rMechanics();
+  else if(_sec==='mining')main.innerHTML=rMining();
+  else if(_sec==='scrolls')main.innerHTML=rScrolls();
+  else main.innerHTML=rHome();
+}
+
+function rHome(){
+  const tierNames={1:'Starter',2:'Novice',3:'Apprentice',4:'Journeyman',5:'Adept',6:'Expert',7:'Master',8:'Grandmaster',9:'Legendary',10:'Boss',11:'Mythic'};
+  return bc([{l:'Main Page'}])+`
+<div class="home-hero"><h1>Harpagia Wiki</h1><p>The comprehensive reference for Harpagia — Offline Idle RPG v1.76.0</p></div>
+<div class="home-categories">
+  <div class="home-cat" onclick="navigate('monsters')"><div class="hc-icon">⚔️</div><div class="hc-name">Monsters</div><div class="hc-count">${MOBS.length} creatures · 11 tiers</div></div>
+  <div class="home-cat" onclick="navigate('abilities')"><div class="hc-icon">✨</div><div class="hc-name">Abilities</div><div class="hc-count">${ABILITIES.length} combat abilities</div></div>
+  <div class="home-cat" onclick="navigate('weapons')"><div class="hc-icon">🗡️</div><div class="hc-name">Weapons</div><div class="hc-count">${WEAPONS.length} weapons</div></div>
+  <div class="home-cat" onclick="navigate('armor')"><div class="hc-icon">🛡️</div><div class="hc-name">Armour</div><div class="hc-count">${HELMETS.length+ARMOR.length+GREAVES.length} pieces · ${AMULETS.length} amulets</div></div>
+  <div class="home-cat" onclick="navigate('fishing')"><div class="hc-icon">🐟</div><div class="hc-name">Fishing</div><div class="hc-count">${FISH.length} fish species</div></div>
+  <div class="home-cat" onclick="navigate('soulstones')"><div class="hc-icon">💎</div><div class="hc-name">Soulstones</div><div class="hc-count">${SOULSTONES.length} prefixes · 3 ranks</div></div>
+  <div class="home-cat" onclick="navigate('pets')"><div class="hc-icon">🐾</div><div class="hc-name">Pets</div><div class="hc-count">${PETS.length} companions</div></div>
+  <div class="home-cat" onclick="navigate('locations')"><div class="hc-icon">🗺️</div><div class="hc-name">Locations</div><div class="hc-count">${LOCATIONS.length} zones</div></div>
+  <div class="home-cat" onclick="navigate('cardsets')"><div class="hc-icon">🃏</div><div class="hc-name">Card Sets</div><div class="hc-count">${CARD_SETS.length} sets</div></div>
+  <div class="home-cat" onclick="navigate('sigils')"><div class="hc-icon">🔮</div><div class="hc-name">Sigils</div><div class="hc-count">4 sigil tiers · Lv.140</div></div>
+  <div class="home-cat" onclick="navigate('mining')"><div class="hc-icon">⛏️</div><div class="hc-name">Mining</div><div class="hc-count">${MINERALS.length} minerals · ${COMPONENTS.length} components</div></div>
+  <div class="home-cat" onclick="navigate('scrolls')"><div class="hc-icon">📜</div><div class="hc-name">Scrolls</div><div class="hc-count">${SCROLLS.length} scrolls · EXP &amp; utility</div></div>
+  <div class="home-cat" onclick="navigate('mechanics')"><div class="hc-icon">📖</div><div class="hc-name">Mechanics</div><div class="hc-count">Combat &amp; progression</div></div>
+</div>
+<div class="section-header">Tier Overview</div>
+<table class="wiki-table" id="tt"><thead><tr><th onclick="sortTable('tt',0)">Tier</th><th onclick="sortTable('tt',1)">Name</th><th onclick="sortTable('tt',2)">Monsters</th><th onclick="sortTable('tt',3)">Bonus EXP</th></tr></thead><tbody>
+${[1,2,3,4,5,6,7,8,9,10,11].map(t=>{const ms=MOBS.filter(m=>m.tier===t);const expVals=[...new Set(ms.map(m=>m.bonusExp).filter(v=>v!=null))];return`<tr onclick="navigate('monsters')" style="cursor:pointer"><td data-val="${t}">${tierBadge(t)}</td><td>${tierNames[t]}</td><td>${ms.length}</td><td>${expVals.length?'+'+expVals.join('/')+'x':'Base'}</td></tr>`;}).join('')}
+</tbody></table>`;}
+
+function rMonsters(){
+  const rows=[...MOBS].sort((a,b)=>(a.tier||99)-(b.tier||99)||(a.name.localeCompare(b.name)));
+  return bc([{l:'Main Page',o:"navigate('home')"},{l:'Monsters'}])+`
+<div class="page-title">Monsters</div>
+<div class="page-subtitle">All ${MOBS.length} monsters. Click any row for full details.</div>
+<table class="wiki-table" id="mt"><thead><tr>
+  <th onclick="sortTable('mt',0)">Name</th><th onclick="sortTable('mt',1)">Tier</th><th onclick="sortTable('mt',2)">HP</th>
+  <th onclick="sortTable('mt',3)">Power</th><th onclick="sortTable('mt',4)">Defence</th><th onclick="sortTable('mt',5)">Speed</th>
+  <th onclick="sortTable('mt',6)">Weaponry</th><th onclick="sortTable('mt',7)">Unique Loot</th>
+</tr></thead><tbody>
+${rows.map(m=>`<tr onclick="navigate('monsters',${m.id})" style="cursor:pointer">
+  <td><img class="mob-icon" src="${mobSprite(m.name)}" onerror="this.style.display='none'" alt="">${m.name}</td>
+  <td data-val="${m.tier||99}">${tierBadge(m.tier)}</td>
+  <td data-val="${m.hp}">${fmt(m.hp)}</td><td data-val="${m.power}">${fmt(m.power)}</td>
+  <td data-val="${m.defence}">${fmt(m.defence)}</td><td data-val="${m.speed}">${fmt(m.speed)}</td>
+  <td data-val="${m.weaponry}">${fmt(m.weaponry)}</td>
+  <td data-val="${m.uniqueLootChance||0}">${m.uniqueLootChance?'1 in '+fmt(m.uniqueLootChance):'—'}</td>
+</tr>`).join('')}
+</tbody></table>`;}
+
+function rMonsterD(id){
+  const m=MOBS.find(x=>x.id===id||x.id===parseInt(id));
+  if(!m)return'<p>Not found.</p>';
+  const slug=m.name.toLowerCase().replace(/ /g,'_');
+  const tc={1:'#374151',2:'#164e63',3:'#14532d',4:'#713f12',5:'#7c2d12',6:'#581c87',7:'#1e3a8a',8:'#064e3b',9:'#7f1d1d',10:'#1c1917',11:'#0f172a'};
+  return bc([{l:'Main Page',o:"navigate('home')"},{l:'Monsters',o:"navigate('monsters')"},{l:m.name}])+`
+<div class="page-title">${m.name}</div>
+<div class="clearfix">
+<div class="infobox">
+  <div class="infobox-title" style="background:${tc[m.tier]||'#374151'}">${m.name}</div>
+  <div class="infobox-img"><img src="${IMG}assets_npc_${slug}.png" onerror="this.style.display='none'" alt="${m.name}"></div>
+  <table>
+    <tr><td>Tier</td><td>${tierBadge(m.tier)}</td></tr>
+    <tr><td>HP</td><td>${fmt(m.hp)}</td></tr>
+    <tr><td>Power</td><td>${fmt(m.power)}</td></tr>
+    <tr><td>Defence</td><td>${fmt(m.defence)}</td></tr>
+    <tr><td>Speed</td><td>${fmt(m.speed)}</td></tr>
+    <tr><td>Weaponry</td><td>${fmt(m.weaponry)}</td></tr>
+    ${m.uniqueLootChance?`<tr><td>Unique Loot</td><td>1 in ${fmt(m.uniqueLootChance)}</td></tr>`:''}
+  </table>
+</div>
+<div>
+  <div class="detail-desc">${m.name} is a ${m.tier?'Tier '+m.tier:'special'} monster in Harpagia.${m.uniqueLootChance?' Has a 1 in '+fmt(m.uniqueLootChance)+' chance to drop unique loot.':''}${m.bonusExp?' Grants +'+(m.bonusExp*100)+'% bonus experience.':''}</div>
+  <div class="section-header">Monster Card</div>
+  <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:16px">
+    <div style="text-align:center"><img src="${IMG}assets_monster_cards_${slug}_card.png" onerror="this.style.display='none'" style="width:110px;image-rendering:pixelated" alt="Card"><div style="font-size:11px;color:var(--text-dim);margin-top:4px">Monster Card</div></div>
+    <div style="text-align:center"><img src="${IMG}assets_npc_${slug}.png" onerror="this.style.display='none'" style="width:80px;image-rendering:pixelated" alt="${m.name}"><div style="font-size:11px;color:var(--text-dim);margin-top:4px">Sprite</div></div>
+  </div>
+  <div class="section-header">Combat Stats</div>
+  <div class="stat-row"><span class="stat-label">Hit Points</span><span class="stat-val">${fmt(m.hp)}</span></div>
+  <div class="stat-row"><span class="stat-label">Power</span><span class="stat-val">${fmt(m.power)}</span></div>
+  <div class="stat-row"><span class="stat-label">Defence</span><span class="stat-val">${fmt(m.defence)}</span></div>
+  <div class="stat-row"><span class="stat-label">Speed</span><span class="stat-val">${fmt(m.speed)}</span></div>
+  <div class="stat-row"><span class="stat-label">Weaponry</span><span class="stat-val">${fmt(m.weaponry)}</span></div>
+  ${m.uniqueLootChance?`<div class="stat-row"><span class="stat-label">Unique Loot Chance</span><span class="stat-val">1 in ${fmt(m.uniqueLootChance)}</span></div>`:''}
+  ${m.bonusExp?`<div class="stat-row"><span class="stat-label">EXP Multiplier</span><span class="stat-val">+${m.bonusExp*100}%</span></div>`:''}
+</div></div>`;}
+
+function rAbilities(){
+  return bc([{l:'Main Page',o:"navigate('home')"},{l:'Abilities'}])+`
+<div class="page-title">Abilities</div>
+<div class="page-subtitle">${ABILITIES.length} combat abilities. Each costs MP and has a turn cooldown.</div>
+<div class="ability-grid">
+${ABILITIES.map(a=>`<div class="ability-card" onclick="navigate('abilities','${a.id}')">
+  <img src="${IMG}assets_abilities_${a.id.toLowerCase()}.png" onerror="this.style.display='none'" alt="${a.name}">
+  <div><div style="font-weight:700;color:#fff;margin-bottom:2px">${a.name}</div>
+  <div style="font-size:12px;color:var(--text-dim)">${a.shortDescription}</div>
+  <div style="font-size:11px;color:var(--text-dim);margin-top:4px">CD: ${a.cooldown}t · MP: ${fmt(a.mp)} · Gem: ${a.gem}</div></div>
+</div>`).join('')}
+</div>`;}
+
+function rAbilityD(id){
+  const a=ABILITIES.find(x=>x.id===id);
+  if(!a)return'<p>Not found.</p>';
+  return bc([{l:'Main Page',o:"navigate('home')"},{l:'Abilities',o:"navigate('abilities')"},{l:a.name}])+`
+<div class="page-title">${a.name}</div>
+<div class="clearfix">
+<div class="infobox">
+  <div class="infobox-title" style="background:#1e3a8a">${a.name}</div>
+  <div class="infobox-img"><img src="${IMG}assets_abilities_${a.id.toLowerCase()}.png" onerror="this.style.display='none'" alt="${a.name}"></div>
+  <table>
+    <tr><td>Cooldown</td><td>${a.cooldown} turns</td></tr>
+    <tr><td>MP Cost</td><td>${fmt(a.mp)}</td></tr>
+    <tr><td>Gem Cost</td><td>${a.gem}</td></tr>
+    <tr><td>Level</td><td>${a.level}</td></tr>
+  </table>
+</div>
+<div>
+  <div class="detail-desc">${a.description}</div>
+  <div class="section-header">Details</div>
+  <div class="stat-row"><span class="stat-label">Effect</span><span class="stat-val">${a.shortDescription}</span></div>
+  <div class="stat-row"><span class="stat-label">Cooldown</span><span class="stat-val">${a.cooldown} turns</span></div>
+  <div class="stat-row"><span class="stat-label">MP Cost</span><span class="stat-val">${fmt(a.mp)}</span></div>
+  <div class="stat-row"><span class="stat-label">Gem Cost</span><span class="stat-val">${a.gem} gems</span></div>
+  <div class="stat-row"><span class="stat-label">Ability Level</span><span class="stat-val">${a.level}</span></div>
+</div></div>`;}
+
+function wType(name){return name.match(/Axe|Greataxe/)?'Axe':name.match(/Dagger|Shiv|Keris/)?'Dagger':name.match(/Sword|Blade/)?'Sword':name.match(/Cane/)?'Staff':'Unique';}
+
+function rWeapons(){
+  return bc([{l:'Main Page',o:"navigate('home')"},{l:'Weapons'}])+`
+<div class="page-title">Weapons</div>
+<div class="page-subtitle">${WEAPONS.length} weapons. Each has up to 20+ ranks of increasing power. Click any row for details.</div>
+<table class="wiki-table" id="wt"><thead><tr>
+  <th onclick="sortTable('wt',0)">Weapon</th><th onclick="sortTable('wt',1)">Type</th>
+  <th onclick="sortTable('wt',2)">Min Power</th><th onclick="sortTable('wt',3)">Max Power</th>
+  <th onclick="sortTable('wt',4)">Ranks</th><th onclick="sortTable('wt',5)">Level Required</th>
+</tr></thead><tbody>
+${WEAPONS.map(w=>{
+  const slug=w.name.toLowerCase().replace(/'/g,'').replace(/ /g,'_');
+  return`<tr onclick="navigate('weapons','${w.name.replace(/'/g,"\\'")}');" style="cursor:pointer">
+    <td><img class="mob-icon" src="${IMG}assets_weapons_${slug}.png" onerror="this.style.display='none'" alt="">${w.name}</td>
+    <td>${wType(w.name)}</td>
+    <td data-val="${w.power[0]}">${w.power[0]}</td>
+    <td data-val="${w.power[1]}">${w.power[1]}</td>
+    <td data-val="${w.ranks}">${w.ranks}</td>
+    <td data-val="${w.levelRequired}">${w.levelRequired}</td>
+  </tr>`;
+}).join('')}
+</tbody></table>`;}
+
+function rWeaponD(name){
+  const w=WEAPONS.find(x=>x.name===name);
+  if(!w)return'<p>Not found.</p>';
+  const slug=w.name.toLowerCase().replace(/'/g,'').replace(/ /g,'_');
+  const type=wType(w.name);
+  const typeColors={Axe:'#7c2d12',Dagger:'#581c87',Sword:'#1e3a8a',Staff:'#064e3b',Unique:'#713f12'};
+  return bc([{l:'Main Page',o:"navigate('home')"},{l:'Weapons',o:"navigate('weapons')"},{l:w.name}])+`
+<div class="page-title">${w.name}</div>
+<div class="clearfix">
+<div class="infobox">
+  <div class="infobox-title" style="background:${typeColors[type]||'#374151'}">${w.name}</div>
+  <div class="infobox-img"><img src="${IMG}assets_weapons_${slug}.png" onerror="this.style.display='none'" alt="${w.name}" style="max-width:100px;max-height:100px"></div>
+  <table>
+    <tr><td>Type</td><td>${type}</td></tr>
+    <tr><td>Level Req.</td><td>${w.levelRequired}</td></tr>
+    <tr><td>Min Power</td><td>${w.power[0]}</td></tr>
+    <tr><td>Max Power</td><td>${w.power[1]}</td></tr>
+    <tr><td>Ranks</td><td>${w.ranks}</td></tr>
+  </table>
+</div>
+<div>
+  <div class="detail-desc">The ${w.name} is a ${type}-type weapon available from level ${w.levelRequired}. It has ${w.ranks} rank${w.ranks!==1?'s':''}, scaling from ${w.power[0]} to ${w.power[1]} power.</div>
+  <div class="section-header">Stats</div>
+  <div class="stat-row"><span class="stat-label">Weapon Type</span><span class="stat-val">${type}</span></div>
+  <div class="stat-row"><span class="stat-label">Level Required</span><span class="stat-val">${w.levelRequired}</span></div>
+  <div class="stat-row"><span class="stat-label">Power (Rank 1)</span><span class="stat-val">${w.power[0]}</span></div>
+  <div class="stat-row"><span class="stat-label">Power (Max Rank)</span><span class="stat-val">${w.power[1]}</span></div>
+  <div class="stat-row"><span class="stat-label">Total Ranks</span><span class="stat-val">${w.ranks}</span></div>
+  <div class="stat-row"><span class="stat-label">Power per Rank</span><span class="stat-val">+${((w.power[1]-w.power[0])/(w.ranks-1||1)).toFixed(1)}</span></div>
+</div></div>`;}
+
+function armorTable(id,arr,sprPrefix){
+  return`<table class="wiki-table" id="${id}"><thead><tr>
+  <th onclick="sortTable('${id}',0)">Item</th><th onclick="sortTable('${id}',1)">Min Def</th>
+  <th onclick="sortTable('${id}',2)">Max Def</th><th onclick="sortTable('${id}',3)">Ranks</th><th onclick="sortTable('${id}',4)">Level</th>
+</tr></thead><tbody>
+${arr.map(a=>{const slug=a.name.toLowerCase().replace(/ /g,'_');return`<tr onclick="navigate('armor','${a.name}')" style="cursor:pointer">
+  <td><img class="mob-icon" src="${IMG}${sprPrefix}${slug}.png" onerror="this.style.display='none'" alt="">${a.name}</td>
+  <td data-val="${a.def[0]}">${a.def[0]}</td><td data-val="${a.def[1]}">${a.def[1]}</td>
+  <td data-val="${a.ranks}">${a.ranks}</td><td data-val="${a.levelRequired}">${a.levelRequired}</td>
+</tr>`;}).join('')}
+</tbody></table>`;}
+
+function rArmor(){
+  return bc([{l:'Main Page',o:"navigate('home')"},{l:'Armour'}])+`
+<div class="page-title">Armour</div>
+<div class="page-subtitle">Helms, chestplates, greaves, and amulets. Click any item for full details.</div>
+<div class="section-header">Helmets (12 types)</div>
+${armorTable('ht',HELMETS,'assets_helms_')}
+<div class="section-header">Chestplates (12 types)</div>
+${armorTable('ct',ARMOR,'assets_armor_')}
+<div class="section-header">Greaves (12 types)</div>
+${armorTable('gt',GREAVES,'assets_legs_')}
+<div class="section-header">Amulets</div>
+<div class="ss-grid">
+${AMULETS.map(am=>`<div class="ss-card" onclick="navigate('armor','${am.name}')">
+  <img src="${IMG}assets_amulets_${am.slug}.png" onerror="this.style.display='none'" alt="${am.name}">
+  <div><div class="ss-name">${am.name}</div>
+  <div class="ss-desc">+${am.statLabel} · ${am.maxRank} ranks · Lv.${am.levelRequired}</div>
+  <div style="margin-top:5px"><span class="rank-badge rank1">R1: +${am.rankBonus}</span><span class="rank-badge rank3">R${am.maxRank}: +${(am.rankBonus*am.maxRank).toFixed(1)}</span></div>
+  </div>
+</div>`).join('')}
+</div>`;}
+
+function rArmorD(name){
+  const hm=HELMETS.find(x=>x.name===name);
+  const gv=GREAVES.find(x=>x.name===name);
+  const a=ARMOR.find(x=>x.name===name);
+  const am=AMULETS.find(x=>x.name===name);
+  if(hm||gv){
+    const item=hm||gv;
+    const slot=hm?'Helmet':'Greaves';
+    const sprPrefix=hm?'assets_helms_':'assets_legs_';
+    const slug=item.name.toLowerCase().replace(/ /g,'_');
+    return bc([{l:'Main Page',o:"navigate('home')"},{l:'Armour',o:"navigate('armor')"},{l:item.name}])+`
+<div class="page-title">${item.name}</div>
+<div class="clearfix">
+<div class="infobox">
+  <div class="infobox-title" style="background:#374151">${item.name}</div>
+  <div class="infobox-img"><img src="${IMG}${sprPrefix}${slug}.png" onerror="this.style.display='none'" alt="${item.name}" style="max-width:100px"></div>
+  <table>
+    <tr><td>Slot</td><td>${slot}</td></tr>
+    <tr><td>Level Req.</td><td>${item.levelRequired}</td></tr>
+    <tr><td>Min Defence</td><td>${item.def[0]}</td></tr>
+    <tr><td>Max Defence</td><td>${item.def[1]}</td></tr>
+    <tr><td>Ranks</td><td>${item.ranks}</td></tr>
+  </table>
+</div>
+<div>
+  <div class="detail-desc">The ${item.name} is a ${slot.toLowerCase()} providing defence. It has ${item.ranks} ranks scaling from ${item.def[0]} to ${item.def[1]} defence. Requires level ${item.levelRequired}.</div>
+  <div class="section-header">Stats</div>
+  <div class="stat-row"><span class="stat-label">Slot</span><span class="stat-val">${slot}</span></div>
+  <div class="stat-row"><span class="stat-label">Level Required</span><span class="stat-val">${item.levelRequired}</span></div>
+  <div class="stat-row"><span class="stat-label">Defence (Rank 1)</span><span class="stat-val">${item.def[0]}</span></div>
+  <div class="stat-row"><span class="stat-label">Defence (Max Rank)</span><span class="stat-val">${item.def[1]}</span></div>
+  <div class="stat-row"><span class="stat-label">Defence per Rank</span><span class="stat-val">+${((item.def[1]-item.def[0])/(item.ranks-1)).toFixed(1)}</span></div>
+  <div class="stat-row"><span class="stat-label">Total Ranks</span><span class="stat-val">${item.ranks}</span></div>
+</div></div>`;
+  }
+  if(am){
+    return bc([{l:'Main Page',o:"navigate('home')"},{l:'Armour',o:"navigate('armor')"},{l:am.name}])+`
+<div class="page-title">${am.name}</div>
+<div class="clearfix">
+<div class="infobox">
+  <div class="infobox-title" style="background:#1e3a8a">${am.name}</div>
+  <div class="infobox-img"><img src="${IMG}assets_amulets_${am.slug}.png" onerror="this.style.display='none'" alt="${am.name}"></div>
+  <table>
+    <tr><td>Stat</td><td>${am.statLabel}</td></tr>
+    <tr><td>Level Req.</td><td>${am.levelRequired}</td></tr>
+    <tr><td>Max Ranks</td><td>${am.maxRank}</td></tr>
+    <tr><td>R1 Bonus</td><td>+${am.rankBonus}</td></tr>
+    <tr><td>Max Bonus</td><td>+${(am.rankBonus*am.maxRank).toFixed(1)}</td></tr>
+  </table>
+</div>
+<div>
+  <div class="detail-desc">The ${am.name} provides a bonus to ${am.statLabel}. It has ${am.maxRank} ranks, with each rank adding +${am.rankBonus} ${am.statLabel.toLowerCase()}.</div>
+  <div class="section-header">Rank Progression</div>
+  ${Array.from({length:am.maxRank},(_, i)=>`<div class="stat-row"><span class="stat-label">Rank ${i+1}</span><span class="stat-val">+${((i+1)*am.rankBonus).toFixed(1)}</span></div>`).join('')}
+</div></div>`;
+  }
+  if(a){
+    return bc([{l:'Main Page',o:"navigate('home')"},{l:'Armour',o:"navigate('armor')"},{l:a.name}])+`
+<div class="page-title">${a.name}</div>
+<div class="clearfix">
+<div class="infobox">
+  <div class="infobox-title" style="background:#374151">${a.name}</div>
+  <div class="infobox-img"><img src="${IMG}assets_armor_${a.name.toLowerCase().replace(/ /g,'_')}.png" onerror="this.style.display='none'" alt="${a.name}" style="max-width:100px"></div>
+  <table>
+    <tr><td>Level Req.</td><td>${a.levelRequired}</td></tr>
+    <tr><td>Min Defence</td><td>${a.def[0]}</td></tr>
+    <tr><td>Max Defence</td><td>${a.def[1]}</td></tr>
+    <tr><td>Ranks</td><td>${a.ranks}</td></tr>
+  </table>
+</div>
+<div>
+  <div class="detail-desc">The ${a.name} provides defence. It has ${a.ranks} ranks scaling from ${a.def[0]} to ${a.def[1]} defence.</div>
+  <div class="section-header">Stats</div>
+  <div class="stat-row"><span class="stat-label">Level Required</span><span class="stat-val">${a.levelRequired}</span></div>
+  <div class="stat-row"><span class="stat-label">Defence (Rank 1)</span><span class="stat-val">${a.def[0]}</span></div>
+  <div class="stat-row"><span class="stat-label">Defence (Max Rank)</span><span class="stat-val">${a.def[1]}</span></div>
+  <div class="stat-row"><span class="stat-label">Defence per Rank</span><span class="stat-val">+${((a.def[1]-a.def[0])/(a.ranks-1)).toFixed(1)}</span></div>
+  <div class="stat-row"><span class="stat-label">Total Ranks</span><span class="stat-val">${a.ranks}</span></div>
+</div></div>`;
+  }
+  return'<p>Not found.</p>';}
+
+
+function rFishing(){
+  const s=[...FISH].sort((a,b)=>a.levelRequired-b.levelRequired);
+  return bc([{l:'Main Page',o:"navigate('home')"},{l:'Fishing'}])+`
+<div class="page-title">Fishing</div>
+<div class="page-subtitle">${FISH.length} fish species. Raw / Cooked heal shown. Click for details.</div>
+<div class="fish-grid">
+${s.map(f=>{const slug=f.name.toLowerCase().replace(/ /g,'_');return`<div class="fish-card" onclick="navigate('fishing','${f.name}')">
+  <div class="fish-sprites">
+    <img src="${IMG}assets_food_${slug}.png" onerror="this.style.display='none'" title="Raw" alt="Raw">
+    <img src="${IMG}assets_food_${slug}_cooked.png" onerror="this.style.display='none'" title="Cooked" alt="Cooked">
+  </div>
+  <div class="fish-name">${f.name}</div>
+  <div class="fish-stats"><span>Lv.${f.levelRequired}</span><span>❤️ ${f.heal}/${f.healCooked}</span><span>✨ ${fmt(f.exp)}</span></div>
+</div>`;}).join('')}
+</div>`;}
+
+function rFishD(name){
+  const f=FISH.find(x=>x.name===name);
+  if(!f)return'<p>Not found.</p>';
+  const slug=f.name.toLowerCase().replace(/ /g,'_');
+  return bc([{l:'Main Page',o:"navigate('home')"},{l:'Fishing',o:"navigate('fishing')"},{l:f.name}])+`
+<div class="page-title">${f.name}</div>
+<div class="clearfix">
+<div class="infobox">
+  <div class="infobox-title" style="background:#064e3b">${f.name}</div>
+  <div class="infobox-img" style="display:flex;gap:12px;justify-content:center">
+    <div style="text-align:center"><img src="${IMG}assets_food_${slug}.png" onerror="this.style.display='none'" style="max-width:56px;max-height:56px" alt="Raw"><div style="font-size:11px;color:var(--text-dim)">Raw</div></div>
+    <div style="text-align:center"><img src="${IMG}assets_food_${slug}_cooked.png" onerror="this.style.display='none'" style="max-width:56px;max-height:56px" alt="Cooked"><div style="font-size:11px;color:var(--text-dim)">Cooked</div></div>
+  </div>
+  <table>
+    <tr><td>Level Req.</td><td>${f.levelRequired}</td></tr>
+    <tr><td>Raw Heal</td><td>${fmt(f.heal)} HP</td></tr>
+    <tr><td>Cooked Heal</td><td>${fmt(f.healCooked)} HP</td></tr>
+    <tr><td>Fishing EXP</td><td>${fmt(f.exp)}</td></tr>
+  </table>
+</div>
+<div>
+  <div class="detail-desc">The ${f.name} is caught at fishing level ${f.levelRequired}. Cooking it increases its heal by ${fmt(f.healCooked-f.heal)} HP.</div>
+  <div class="section-header">Stats</div>
+  <div class="stat-row"><span class="stat-label">Level Required</span><span class="stat-val">${f.levelRequired}</span></div>
+  <div class="stat-row"><span class="stat-label">Raw Heal</span><span class="stat-val">${fmt(f.heal)} HP</span></div>
+  <div class="stat-row"><span class="stat-label">Cooked Heal</span><span class="stat-val">${fmt(f.healCooked)} HP</span></div>
+  <div class="stat-row"><span class="stat-label">Cooking Bonus</span><span class="stat-val">+${fmt(f.healCooked-f.heal)} HP</span></div>
+  <div class="stat-row"><span class="stat-label">Fishing EXP</span><span class="stat-val">${fmt(f.exp)}</span></div>
+</div></div>`;}
+
+function rSoulstones(){
+  return bc([{l:'Main Page',o:"navigate('home')"},{l:'Soulstones'}])+`
+<div class="page-title">Soulstones</div>
+<div class="page-subtitle">${SOULSTONES.length} prefixes, each with 3 ranks of increasing power.</div>
+<div class="ss-grid">
+${SOULSTONES.map(ss=>{const slug=ss.name.toLowerCase().replace(/ /g,'_');return`<div class="ss-card" onclick="navigate('soulstones','${ss.name}')">
+  <img src="${IMG}assets_soulstones_${slug}.png" onerror="this.style.display='none'" alt="${ss.name}">
+  <div><div class="ss-name">${ss.name}</div><div class="ss-desc">${ss.shortDescription}</div>
+  <div style="margin-top:6px">
+    <span class="rank-badge rank1">R1: ${ss.rankBonuses[0]}</span>
+    <span class="rank-badge rank2">R2: ${ss.rankBonuses[1]}</span>
+    <span class="rank-badge rank3">R3: ${ss.rankBonuses[2]}</span>
+  </div></div>
+</div>`;}).join('')}
+</div>`;}
+
+function rSSD(name){
+  const ss=SOULSTONES.find(x=>x.name===name);
+  if(!ss)return'<p>Not found.</p>';
+  const slug=ss.name.toLowerCase().replace(/ /g,'_');
+  return bc([{l:'Main Page',o:"navigate('home')"},{l:'Soulstones',o:"navigate('soulstones')"},{l:ss.name}])+`
+<div class="page-title">${ss.name} Soulstone</div>
+<div class="clearfix">
+<div class="infobox">
+  <div class="infobox-title" style="background:#581c87">${ss.name}</div>
+  <div class="infobox-img"><img src="${IMG}assets_soulstones_${slug}.png" onerror="this.style.display='none'" alt="${ss.name}"></div>
+  <table>
+    <tr><td>Rank 1</td><td>${ss.rankBonuses[0]}</td></tr>
+    <tr><td>Rank 2</td><td>${ss.rankBonuses[1]}</td></tr>
+    <tr><td>Rank 3</td><td>${ss.rankBonuses[2]}</td></tr>
+  </table>
+</div>
+<div>
+  <div class="detail-desc">${ss.description}</div>
+  <div class="section-header">Rank Bonuses</div>
+  <div class="stat-row"><span class="stat-label">Rank 1</span><span class="stat-val">${ss.rankBonuses[0]}</span></div>
+  <div class="stat-row"><span class="stat-label">Rank 2</span><span class="stat-val">${ss.rankBonuses[1]}</span></div>
+  <div class="stat-row"><span class="stat-label">Rank 3 (Max)</span><span class="stat-val">${ss.rankBonuses[2]}</span></div>
+</div></div>`;}
+
+function rPets(){
+  return bc([{l:'Main Page',o:"navigate('home')"},{l:'Pets'}])+`
+<div class="page-title">Pets</div>
+<div class="page-subtitle">${PETS.length} companions available.</div>
+<div class="pet-grid">
+${PETS.map(p=>{const slug=p.toLowerCase().replace(/ /g,'_');return`<div class="pet-card"><img src="${IMG}assets_pets_${slug}.png" onerror="this.style.display='none'" alt="${p}"><div class="pet-name">${p}</div></div>`;}).join('')}
+</div>`;}
+
+function rLocations(){
+  return bc([{l:'Main Page',o:"navigate('home')"},{l:'Locations'}])+`
+<div class="page-title">Locations</div>
+<div class="page-subtitle">${LOCATIONS.length} zones to explore.</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px">
+${LOCATIONS.map(l=>`<div class="card" onclick="navigate('locations','${l.name}')" style="padding:0;overflow:hidden;text-align:left">
+  <div style="height:120px;background-image:url('${IMG}assets_background_${l.bg}.png');background-size:cover;background-position:center"></div>
+  <div style="padding:12px"><div style="font-weight:700;color:#fff;margin-bottom:4px">${l.name}</div><div>${l.tiers.map(t=>tierBadge(t)).join(' ')}</div></div>
+</div>`).join('')}
+</div>`;}
+
+function rLocationD(name){
+  const l=LOCATIONS.find(x=>x.name===name);
+  if(!l)return'<p>Not found.</p>';
+  const zoneMobs=MOBS.filter(m=>l.tiers.includes(m.tier));
+  return bc([{l:'Main Page',o:"navigate('home')"},{l:'Locations',o:"navigate('locations')"},{l:l.name}])+`
+<div style="height:220px;background-image:url('${IMG}assets_background_${l.bg}.png');background-size:cover;background-position:center;border-radius:6px;margin-bottom:20px;position:relative;overflow:hidden">
+  <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.8),transparent);display:flex;align-items:flex-end;padding:20px">
+    <div><div style="font-size:28px;font-weight:700;color:#fff">${l.name}</div><div style="margin-top:6px">${l.tiers.map(t=>tierBadge(t)).join(' ')}</div></div>
+  </div>
+</div>
+<div class="detail-desc">${l.desc}</div>
+<div class="section-header">Zone Info</div>
+<div class="stat-row"><span class="stat-label">Unlock</span><span class="stat-val">${l.unlock}</span></div>
+<div class="stat-row"><span class="stat-label">Combat Level</span><span class="stat-val">${l.combatLevel}+</span></div>
+<div class="stat-row"><span class="stat-label">Monster Tiers</span><span class="stat-val">${l.tiers.map(t=>'Tier '+t).join(', ')}</span></div>
+<div class="section-header">Monsters in This Zone</div>
+<table class="wiki-table" id="lmt"><thead><tr>
+  <th onclick="sortTable('lmt',0)">Name</th><th onclick="sortTable('lmt',1)">HP</th><th onclick="sortTable('lmt',2)">Power</th><th onclick="sortTable('lmt',3)">Defence</th>
+</tr></thead><tbody>
+${zoneMobs.map(m=>`<tr onclick="navigate('monsters',${m.id})" style="cursor:pointer">
+  <td><img class="mob-icon" src="${mobSprite(m.name)}" onerror="this.style.display='none'" alt="">${m.name}</td>
+  <td data-val="${m.hp}">${fmt(m.hp)}</td><td data-val="${m.power}">${fmt(m.power)}</td><td data-val="${m.defence}">${fmt(m.defence)}</td>
+</tr>`).join('')}
+</tbody></table>`;}
+
+function rSigils(){
+  const sigils=[{name:'Lesser Sigil',slug:'SIG1',bonus:1,levelRequired:140},{name:'Runed Sigil',slug:'SIG2',bonus:2,levelRequired:140},{name:'Ancient Sigil',slug:'SIG3',bonus:3,levelRequired:140},{name:'Primal Sigil',slug:'SIG4',bonus:4,levelRequired:140}];
+  return bc([{l:'Main Page',o:"navigate('home')"},{l:'Sigils'}])+`
+<div class="page-title">Sigils</div>
+<div class="page-subtitle">Equippable passive items. 4 tiers of increasing power. All require level 140.</div>
+<table class="wiki-table" id="sigt"><thead><tr>
+  <th onclick="sortTable('sigt',0)">Sigil</th>
+  <th onclick="sortTable('sigt',1)">Bonus</th>
+  <th onclick="sortTable('sigt',2)">Level Required</th>
+</tr></thead><tbody>
+${sigils.map(s=>`<tr>
+  <td><img class="mob-icon" src="${IMG}assets_sigils_${s.slug}.png" onerror="this.style.display='none'" alt="">${s.name}</td>
+  <td data-val="${s.bonus}">+${s.bonus}</td>
+  <td data-val="${s.levelRequired}">${s.levelRequired}</td>
+</tr>`).join('')}
+</tbody></table>
+<div class="detail-desc">Sigils are equippable passive items that provide a flat bonus. Higher-tier sigils provide greater bonuses. All sigils require combat level 140 to equip.</div>
+<div class="ss-grid" style="margin-top:16px">
+${sigils.map(s=>`<div class="ss-card">
+  <img src="${IMG}assets_sigils_${s.slug}.png" onerror="this.style.display='none'" alt="${s.name}" style="width:56px;height:56px">
+  <div><div class="ss-name">${s.name}</div>
+  <div class="ss-desc">Passive Bonus: +${s.bonus}</div>
+  <div style="font-size:12px;color:var(--text-dim);margin-top:4px">Level ${s.levelRequired}</div>
+  </div>
+</div>`).join('')}
+</div>`;}
+
+function rMining(){
+  return bc([{l:'Main Page',o:"navigate('home')"},{l:'Mining'}])+`
+<div class="page-title">Mining</div>
+<div class="page-subtitle">Mine gems and minerals to craft gear and earn Geo Fragments for Base Camp Research.</div>
+<div class="section-header">Gems & Minerals (${MINERALS.length})</div>
+<table class="wiki-table" id="mint"><thead><tr>
+  <th onclick="sortTable('mint',0)">Mineral</th>
+  <th onclick="sortTable('mint',1)">Level</th>
+  <th onclick="sortTable('mint',2)">Mining EXP</th>
+  <th onclick="sortTable('mint',3)">Geo Fragments</th>
+  <th onclick="sortTable('mint',4)">MP Cost</th>
+</tr></thead><tbody>
+${MINERALS.map(m=>{const slug=m.name.toLowerCase().replace(/ /g,'_');return`<tr>
+  <td><img class="mob-icon" src="${IMG}assets_minerals_${slug}.png" onerror="this.style.display='none'" alt="">${m.name}</td>
+  <td data-val="${m.levelRequired}">${m.levelRequired}</td>
+  <td data-val="${m.exp}">${fmt(m.exp)}</td>
+  <td data-val="${m.geoFragments}">${m.geoFragments}</td>
+  <td data-val="${m.mp}">${m.mp}</td>
+</tr>`;}).join('')}
+</tbody></table>
+<div class="section-header">Crafting Components (${COMPONENTS.length})</div>
+<div class="detail-desc">Components are used to forge and upgrade armour and weapons. They can be extracted into Geo Fragments for Base Camp Research.</div>
+<table class="wiki-table" id="compt"><thead><tr>
+  <th onclick="sortTable('compt',0)">Component</th>
+  <th onclick="sortTable('compt',1)">Level</th>
+  <th onclick="sortTable('compt',2)">Forging EXP</th>
+  <th onclick="sortTable('compt',3)">Geo Fragments</th>
+</tr></thead><tbody>
+${COMPONENTS.map(c=>{const slug=c.name.toLowerCase().replace(/ /g,'_');return`<tr>
+  <td><img class="mob-icon" src="${IMG}assets_components_${slug}.png" onerror="this.style.display='none'" alt="">${c.name}</td>
+  <td data-val="${c.levelRequired}">${c.levelRequired}</td>
+  <td data-val="${c.exp}">${fmt(c.exp)}</td>
+  <td data-val="${c.geoFragments}">${c.geoFragments}</td>
+</tr>`;}).join('')}
+</tbody></table>`;}
+
+function rScrolls(){
+  const expScrolls=SCROLLS.filter(s=>s.exp!==null);
+  const utilScrolls=SCROLLS.filter(s=>s.exp===null);
+  return bc([{l:'Main Page',o:"navigate('home')"},{l:'Scrolls'}])+`
+<div class="page-title">Scrolls</div>
+<div class="page-subtitle">${SCROLLS.length} scrolls. One-time use items providing powerful effects.</div>
+<div class="section-header">Experience Scrolls</div>
+<div class="ss-grid">
+${expScrolls.map(s=>{const slug=s.id.replace(/_/g,'_');return`<div class="ss-card">
+  <img src="${IMG}assets_scrolls_${slug}.png" onerror="this.style.display='none'" alt="${s.name}" style="width:56px;height:56px;object-fit:contain">
+  <div><div class="ss-name">${s.name}</div>
+  <div class="ss-desc">${s.description}</div>
+  <div style="font-size:12px;color:var(--gold);margin-top:4px">+${fmt(s.exp)} EXP</div>
+  </div>
+</div>`;}).join('')}
+</div>
+<div class="section-header">Utility Scrolls</div>
+<div class="ss-grid">
+${utilScrolls.map(s=>`<div class="ss-card">
+  <img src="${IMG}assets_scrolls_${s.id}.png" onerror="this.style.display='none'" alt="${s.name}" style="width:56px;height:56px;object-fit:contain">
+  <div><div class="ss-name">${s.name}</div>
+  <div class="ss-desc">${s.description}</div>
+  </div>
+</div>`).join('')}
+</div>`;}
+
+function rCardSets(){
+  return bc([{l:'Main Page',o:"navigate('home')"},{l:'Card Sets'}])+`
+<div class="page-title">Card Sets</div>
+<div class="page-subtitle">${CARD_SETS.length} card sets. Complete a set for passive bonuses.</div>
+<div style="margin-bottom:12px"><input id="csq" type="text" placeholder="Search card sets…" oninput="filterCS(this.value)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:4px;font-size:14px;width:300px;outline:none"></div>
+<div class="cs-grid" id="csgrid">
+${CARD_SETS.map((cs,i)=>`<div class="cs-card" id="cs${i}"><div class="cs-name">${cs}</div></div>`).join('')}
+</div>`;}
+
+function filterCS(q){q=q.toLowerCase();document.querySelectorAll('#csgrid .cs-card').forEach(el=>{el.style.display=el.querySelector('.cs-name').textContent.toLowerCase().includes(q)?'':'none';});}
+
+function rMechanics(){
+  return bc([{l:'Main Page',o:"navigate('home')"},{l:'Mechanics'}])+`
+<div class="page-title">Game Mechanics</div>
+<div class="section-header">Combat Stats</div>
+<table class="wiki-table"><thead><tr><th>Stat</th><th>Description</th></tr></thead><tbody>
+<tr><td>Power</td><td>Base attack damage</td></tr>
+<tr><td>Defence</td><td>Reduces incoming damage</td></tr>
+<tr><td>Speed</td><td>Attack frequency — higher speed = more attacks per turn</td></tr>
+<tr><td>Weaponry</td><td>Additional weapon-based bonus on top of Power</td></tr>
+<tr><td>HP</td><td>Hit Points — reaching 0 loses the battle</td></tr>
+</tbody></table>
+<div class="section-header">Tiers</div>
+<div class="detail-desc">Monsters span 11 tiers. Higher tiers have more HP and stronger stats but grant more EXP and better loot. Tier 10 creatures are bosses. Tier 11 is mythic.</div>
+<div class="section-header">Soulstones</div>
+<div class="detail-desc">Passive items that drop from high-tier enemies. Each soulstone has a prefix determining its effect and comes in Rank 1–3, with Rank 3 providing maximum bonus. ${SOULSTONES.length} different prefixes exist.</div>
+<div class="section-header">Card Sets</div>
+<div class="detail-desc">Monster Cards are collected by defeating enemies. Completing a Card Set (themed group) unlocks passive bonuses. There are ${CARD_SETS.length} card sets total.</div>
+<div class="section-header">Abilities</div>
+<div class="detail-desc">Special combat moves costing MP with a turn-based cooldown. Unlocked and upgraded using Gems. Higher-level abilities cost more MP but have stronger effects. ${ABILITIES.length} abilities available.</div>
+<div class="section-header">Fishing</div>
+<div class="detail-desc">Produces food for healing. Cooked fish heal ~25% more than raw. ${FISH.length} fish species across fishing levels 1–196+.</div>
+<div class="section-header">Armour Slots</div>
+<div class="detail-desc">Three armour slots exist: Helmet, Chestplate, and Greaves. Each has 12 tiers from Bronze (level 1/4/7) up to Viridian (level 151). Amulets provide stat bonuses and have 20 ranks. Sigils (level 140) provide additional passive bonuses.</div>
+<div class="section-header">Mining</div>
+<div class="detail-desc">${MINERALS.length} gems and minerals can be mined starting from level 1. All minerals yield Geo Fragments used in Base Camp Research. ${COMPONENTS.length} crafting components (Bronze–Abyssal) are used to forge and upgrade armour and weapons.</div>
+<div class="section-header">Potions</div>
+<div class="detail-desc">Two potions are available from the Imbuing skill: Sanguine Tonic (level 31) and Soulbinder Elixir (level 81). These provide combat buffs during battles.</div>
+<div class="section-header">Scrolls</div>
+<div class="detail-desc">${SCROLLS.length} one-time-use scrolls exist. Experience scrolls grant 50,000–1,250,000 EXP in any skill. Utility scrolls include Scroll of Haste (−1h expedition time), Scroll of the Artisan (+50% skilling ring effect permanently), and Scroll of the Warlord (+50% combat ring effect permanently).</div>
+<div class="section-header">Unique Loot</div>
+<div class="detail-desc">Some monsters drop rare unique items with a fixed probability per kill (e.g. "1 in 1150"). Tier 10 bosses have the rarest drops (1 in 9,001 to 1 in 45,000).</div>`;}
+
+// SEARCH
+const _idx=[];
+MOBS.forEach(m=>_idx.push({t:'Monster',l:m.name,img:mobSprite(m.name),o:`navigate('monsters',${m.id})`}));
+ABILITIES.forEach(a=>_idx.push({t:'Ability',l:a.name,img:`${IMG}assets_abilities_${a.id.toLowerCase()}.png`,o:`navigate('abilities','${a.id}')`}));
+FISH.forEach(f=>{const s=f.name.toLowerCase().replace(/ /g,'_');_idx.push({t:'Fish',l:f.name,img:`${IMG}assets_food_${s}.png`,o:`navigate('fishing','${f.name}')`});});
+SOULSTONES.forEach(ss=>{const s=ss.name.toLowerCase().replace(/ /g,'_');_idx.push({t:'Soulstone',l:ss.name,img:`${IMG}assets_soulstones_${s}.png`,o:`navigate('soulstones','${ss.name}')`});});
+LOCATIONS.forEach(l=>_idx.push({t:'Location',l:l.name,img:'',o:`navigate('locations','${l.name}')`}));
+WEAPONS.forEach(w=>{const s=w.name.toLowerCase().replace(/'/g,'').replace(/ /g,'_');_idx.push({t:'Weapon',l:w.name,img:`${IMG}assets_weapons_${s}.png`,o:`navigate('weapons','${w.name.replace(/'/g,"\\'")}')`});});
+ARMOR.forEach(a=>_idx.push({t:'Chestplate',l:a.name,img:'',o:`navigate('armor','${a.name}')`}));
+HELMETS.forEach(a=>_idx.push({t:'Helmet',l:a.name,img:'',o:`navigate('armor','${a.name}')`}));
+GREAVES.forEach(a=>_idx.push({t:'Greaves',l:a.name,img:'',o:`navigate('armor','${a.name}')`}));
+AMULETS.forEach(a=>_idx.push({t:'Amulet',l:a.name,img:`${IMG}assets_amulets_${a.slug}.png`,o:`navigate('armor','${a.name}')`}));
+MINERALS.forEach(m=>{const s=m.name.toLowerCase().replace(/ /g,'_');_idx.push({t:'Mineral',l:m.name,img:`${IMG}assets_minerals_${s}.png`,o:`navigate('mining')`});});
+COMPONENTS.forEach(c=>_idx.push({t:'Component',l:c.name,img:'',o:`navigate('mining')`}));
+SCROLLS.forEach(s=>_idx.push({t:'Scroll',l:s.name,img:`${IMG}assets_scrolls_${s.id}.png`,o:`navigate('scrolls')`}));
+
+document.getElementById('search').addEventListener('input',function(){
+  const q=this.value.toLowerCase().trim();
+  const res=document.getElementById('search-results');
+  if(!q){res.style.display='none';return;}
+  const m=_idx.filter(x=>x.l.toLowerCase().includes(q)).slice(0,10);
+  if(!m.length){res.style.display='none';return;}
+  res.innerHTML=m.map(x=>`<div class="sr" onclick="${x.o};document.getElementById('search').value='';document.getElementById('search-results').style.display='none'"><img src="${x.img}" onerror="this.style.display='none'" alt=""><span>${x.l}</span><span class="sr-cat">${x.t}</span></div>`).join('');
+  res.style.display='block';
+});
+document.addEventListener('click',e=>{if(!e.target.closest('#search-wrap'))document.getElementById('search-results').style.display='none';});
+
+navigate('home');
+</script>
+</body>
+</html>
